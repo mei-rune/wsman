@@ -2,6 +2,7 @@ package wsman
 
 import (
 	"flag"
+	"runtime"
 	"testing"
 )
 
@@ -12,7 +13,9 @@ var (
 )
 
 func TestSimpleEnumerateOS(t *testing.T) {
-	WSMAN_DEBUG = true
+	if "windows" != runtime.GOOS {
+		t.Skip("linux is not supported.")
+	}
 	it := Enumerate(&Endpoint{Url: *win_url, User: *win_user, Password: *win_password},
 		"Win32_OperatingSystem", nil)
 	defer it.Close()
@@ -37,7 +40,9 @@ func TestSimpleEnumerateOS(t *testing.T) {
 }
 
 func TestSimpleEnumerateProcess(t *testing.T) {
-	WSMAN_DEBUG = true
+	if "windows" != runtime.GOOS {
+		t.Skip("linux is not supported.")
+	}
 	it := Enumerate(&Endpoint{Url: *win_url, User: *win_user, Password: *win_password},
 		"Win32_Process", nil)
 	defer it.Close()
@@ -87,7 +92,9 @@ func TestSimpleEnumerateProcess(t *testing.T) {
 // }
 
 func TestSimpleGetOS(t *testing.T) {
-	WSMAN_DEBUG = true
+	if "windows" != runtime.GOOS {
+		t.Skip("linux is not supported.")
+	}
 	m, e := Get(&Endpoint{Url: *win_url, User: *win_user, Password: *win_password},
 		"Win32_OperatingSystem", nil)
 	if nil != e {
@@ -99,7 +106,9 @@ func TestSimpleGetOS(t *testing.T) {
 }
 
 func TestSimpleGetServiceWithName(t *testing.T) {
-	WSMAN_DEBUG = true
+	if "windows" != runtime.GOOS {
+		t.Skip("linux is not supported.")
+	}
 	m, e := Get(&Endpoint{Url: *win_url, User: *win_user, Password: *win_password},
 		"Win32_Service", map[string]string{"Name": "spooler"})
 	if nil != e {
