@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"reflect"
 	"strings"
 	"testing"
 )
@@ -27,6 +28,9 @@ var simple_enumerate_response = `
           <p:CreationDate>
             <cim:Datetime>2014-04-03T14:45:50.46875+08:00</cim:Datetime>
           </p:CreationDate>
+          <p:IPAddress>192.168.1.103</p:IPAddress>
+          <p:IPAddress>fe80::6962:c157:2318:423d</p:IPAddress>
+          <p:IPAddress>192.168.1.102</p:IPAddress>
         </p:Win32_Process>
       </w:Items>
       <n:EndOfSequence/>
@@ -151,6 +155,29 @@ func TestEnumerateSimple(t *testing.T) {
 				t.Error("value of 'CreationDate' is not excepted, actual is", m["CreationDate"])
 			}
 
+			v, ok = m["IPAddress"]
+			if !ok || nil == v {
+				t.Error("'IPAddress' is not exists or nil.")
+				return
+			}
+			ss, ok := v.([]interface{})
+			if !ok {
+				t.Errorf("'IPAddress' is not a []interface{}, actual is [%T] %v", v, v)
+				return
+			}
+			if 3 != len(ss) {
+				t.Error("count of 'IPAddress' is not 3, actual is ", ss)
+			} else {
+				if !reflect.DeepEqual("192.168.1.103", ss[0]) {
+					t.Error("IPAddress[0] is not equals '192.168.1.103'", ss[0])
+				}
+				if !reflect.DeepEqual("fe80::6962:c157:2318:423d", ss[1]) {
+					t.Error("IPAddress[1] is not equals 'fe80::6962:c157:2318:423d'", ss[0])
+				}
+				if !reflect.DeepEqual("192.168.1.102", ss[2]) {
+					t.Error("IPAddress[2] is not equals '192.168.1.103'", ss[2])
+				}
+			}
 			t.Log(m)
 		}
 

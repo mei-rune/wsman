@@ -168,23 +168,32 @@ func toMap(decoder *xml.Decoder) (map[string]interface{}, error) {
 		case xml.EndElement:
 			return m, nil
 		case xml.StartElement:
+			var value interface{}
 			if is_nil(v.Attr) {
-				m[v.Name.Local] = nil
 				if e := skipElement(decoder, 0); nil != e {
 					return nil, e
 				}
-				break
+				value = nil
+			} else {
+				txt, e := readXmlText(decoder)
+				if nil != e {
+					if ElementEndError != e {
+						return nil, e
+					} else {
+						value = nil
+					}
+				} else {
+					value = txt
+				}
 			}
 
-			txt, e := readXmlText(decoder)
-			if nil != e {
-				if ElementEndError != e {
-					return nil, e
-				} else {
-					m[v.Name.Local] = nil
-				}
+			old, ok := m[v.Name.Local]
+			if !ok {
+				m[v.Name.Local] = value
+			} else if aa, ok := old.([]interface{}); ok {
+				m[v.Name.Local] = append(aa, value)
 			} else {
-				m[v.Name.Local] = txt
+				m[v.Name.Local] = []interface{}{old, value}
 			}
 		}
 	}
