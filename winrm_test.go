@@ -67,6 +67,9 @@ func TestSimpleEnumerateProcess(t *testing.T) {
 }
 
 // func TestSimpleEnumerateService(t *testing.T) {
+// if "windows" != runtime.GOOS {
+// 	t.Skip("linux is not supported.")
+// }
 // 	WSMAN_DEBUG = true
 // 	it := Enumerate(&Endpoint{Url: *win_url, User: *win_user, Password: *win_password},
 // 		"Win32_Service", map[string]string{"Name": "spooler"})
@@ -92,6 +95,10 @@ func TestSimpleEnumerateProcess(t *testing.T) {
 // }
 
 func TestSimpleEnumerateWin32_NetworkAdapterConfiguration(t *testing.T) {
+	if "windows" != runtime.GOOS {
+		t.Skip("linux is not supported.")
+	}
+
 	WSMAN_DEBUG = true
 	it := Enumerate(&Endpoint{Url: *win_url, User: *win_user, Password: *win_password},
 		"Win32_NetworkAdapterConfiguration", nil)
