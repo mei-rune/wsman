@@ -4,8 +4,11 @@ import (
 	"bytes"
 	"encoding/xml"
 	"errors"
-	"github.com/runner-mei/wsman/envelope"
+	"fmt"
 	"io"
+	"os"
+
+	"github.com/runner-mei/wsman/envelope"
 )
 
 type Enumerator struct {
@@ -14,6 +17,7 @@ type Enumerator struct {
 	SelectorSet map[string]string
 	Context     string
 
+	is_debug          bool
 	is_end            bool
 	is_pull           bool
 	items_enumerating bool
@@ -28,6 +32,10 @@ type Enumerator struct {
 
 func Enumerate(ep *Endpoint, name string, selectorSet map[string]string) *Enumerator {
 	return &Enumerator{Endpoint: ep, Name: name, SelectorSet: selectorSet}
+}
+
+func (c *Enumerator) EnableDebug() {
+	c.is_debug = true
 }
 
 func (c *Enumerator) Close() {
@@ -70,6 +78,10 @@ next_with_context:
 			responseName = "PullResponse"
 		}
 
+		if c.is_debug {
+			fmt.Println(input.Xml())
+		}
+
 		reader, err := c.Deliver(bytes.NewBufferString(input.Xml()))
 		if nil != err {
 			c.err = err
@@ -77,6 +89,10 @@ next_with_context:
 		}
 
 		c.reader = reader
+
+		if c.is_debug {
+			reader = io.TeeReader(reader, os.Stdout)
+		}
 		c.decoder = xml.NewDecoder(reader)
 		ok, err := locateElements(c.decoder, []string{"Envelope", "Body", responseName})
 		if nil != err {
