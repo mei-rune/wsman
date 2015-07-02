@@ -9,9 +9,10 @@ type CreateShell struct {
 	MessageId string
 }
 
+var create_shell_template = template.Must(template.New("CreateShell").Parse(CreateShellTemplate))
+
 func (m *CreateShell) Xml() string {
-	t := template.Must(template.New("CreateShell").Parse(CreateShellTemplate))
-	return applyTemplate(t, m)
+	return applyTemplate(create_shell_template, m)
 }
 
 type DeleteShell struct {
@@ -19,9 +20,10 @@ type DeleteShell struct {
 	ShellId   string
 }
 
+var delete_shell_template = template.Must(template.New("DeleteShell").Parse(DeleteShellTemplate))
+
 func (m *DeleteShell) Xml() string {
-	t := template.Must(template.New("DeleteShell").Parse(DeleteShellTemplate))
-	return applyTemplate(t, m)
+	return applyTemplate(delete_shell_template, m)
 }
 
 type CreateCommand struct {
@@ -30,9 +32,10 @@ type CreateCommand struct {
 	CommandText string
 }
 
+var create_template = template.Must(template.New("CreateCommand").Parse(CreateCommandTemplate))
+
 func (m *CreateCommand) Xml() string {
-	t := template.Must(template.New("CreateCommand").Parse(CreateCommandTemplate))
-	return applyTemplate(t, m)
+	return applyTemplate(create_template, m)
 }
 
 type Send struct {
@@ -42,9 +45,10 @@ type Send struct {
 	Content   string
 }
 
+var send_template = template.Must(template.New("Send").Parse(SendTemplate))
+
 func (m *Send) Xml() string {
-	t := template.Must(template.New("Send").Parse(SendTemplate))
-	return applyTemplate(t, m)
+	return applyTemplate(send_template, m)
 }
 
 type Receive struct {
@@ -53,9 +57,10 @@ type Receive struct {
 	CommandId string
 }
 
+var receive_template = template.Must(template.New("Receive").Parse(ReceiveTemplate))
+
 func (m *Receive) Xml() string {
-	t := template.Must(template.New("Receive").Parse(ReceiveTemplate))
-	return applyTemplate(t, m)
+	return applyTemplate(receive_template, m)
 }
 
 type Signal struct {
@@ -64,43 +69,50 @@ type Signal struct {
 	CommandId string
 }
 
+var signal_template = template.Must(template.New("Signal").Parse(SignalTemplate))
+
 func (m *Signal) Xml() string {
-	t := template.Must(template.New("Signal").Parse(SignalTemplate))
-	return applyTemplate(t, m)
+	return applyTemplate(signal_template, m)
 }
 
 type Enumerate struct {
+	Namespace   string
 	MessageId   string
 	Name        string
 	SelectorSet map[string]string
 }
 
+var enumerate_template = template.Must(template.New("Enumerate").Parse(EnumerateTemplate))
+
 func (m *Enumerate) Xml() string {
-	t := template.Must(template.New("Enumerate").Parse(EnumerateTemplate))
-	return applyTemplate(t, m)
+	return applyTemplate(enumerate_template, m)
 }
 
 type Pull struct {
+	Namespace   string
 	MessageId   string
 	Name        string
 	SelectorSet map[string]string
 	Context     string
 }
 
+var pull_template = template.Must(template.New("Pull").Parse(PullTemplate))
+
 func (m *Pull) Xml() string {
-	t := template.Must(template.New("Pull").Parse(PullTemplate))
-	return applyTemplate(t, m)
+	return applyTemplate(pull_template, m)
 }
 
 type Get struct {
+	Namespace   string
 	MessageId   string
 	Name        string
 	SelectorSet map[string]string
 }
 
+var get_template = template.Must(template.New("Get").Parse(GetTemplate))
+
 func (m *Get) Xml() string {
-	t := template.Must(template.New("Get").Parse(GetTemplate))
-	return applyTemplate(t, m)
+	return applyTemplate(get_template, m)
 }
 
 func applyTemplate(t *template.Template, data interface{}) string {
@@ -252,7 +264,7 @@ const EnumerateTemplate = `<s:Envelope xmlns:s="` + NS_SOAP_ENV + `" xmlns:a="` 
     <a:Action s:mustUnderstand="true">http://schemas.xmlsoap.org/ws/2004/09/enumeration/Enumerate</a:Action>
     <a:MessageID>uuid:{{.MessageId}}</a:MessageID>
     <a:To>http://localhost:5985/wsman</a:To>
-    <w:ResourceURI s:mustUnderstand="true">http://schemas.microsoft.com/wbem/wsman/1/wmi/root/cimv2/{{.Name}}</w:ResourceURI>
+    <w:ResourceURI s:mustUnderstand="true">http://schemas.microsoft.com/wbem/wsman/1/wmi/{{.Namespace}}/{{.Name}}</w:ResourceURI>
     {{if .SelectorSet}}<w:SelectorSet>
       {{range $key, $value := .SelectorSet}}<w:Selector Name="{{$key}}">{{$value}}</w:Selector>{{end}}
     </w:SelectorSet>{{end}}
@@ -274,7 +286,7 @@ const PullTemplate = `<s:Envelope xmlns:s="` + NS_SOAP_ENV + `" xmlns:a="` + NS_
   <s:Header>
     <a:Action s:mustUnderstand="true">http://schemas.xmlsoap.org/ws/2004/09/enumeration/Pull</a:Action>
     <a:To>http://localhost:5985/wsman</a:To>
-    <w:ResourceURI s:mustUnderstand="true">http://schemas.microsoft.com/wbem/wsman/1/wmi/root/cimv2/{{.Name}}</w:ResourceURI>
+    <w:ResourceURI s:mustUnderstand="true">http://schemas.microsoft.com/wbem/wsman/1/wmi/{{.Namespace}}/{{.Name}}</w:ResourceURI>
     {{if .SelectorSet}}<w:SelectorSet>
       {{range $key, $value := .SelectorSet}}<w:Selector Name="{{$key}}">{{$value}}</w:Selector>{{end}}
     </w:SelectorSet>{{end}}
@@ -298,7 +310,7 @@ const GetTemplate = `
   <s:Header>
     <a:Action s:mustUnderstand="true">http://schemas.xmlsoap.org/ws/2004/09/transfer/Get</a:Action>
     <a:To>http://localhost:5985/wsman</a:To>
-    <w:ResourceURI s:mustUnderstand="true">http://schemas.microsoft.com/wbem/wsman/1/wmi/root/cimv2/{{.Name}}</w:ResourceURI>
+    <w:ResourceURI s:mustUnderstand="true">http://schemas.microsoft.com/wbem/wsman/1/wmi/{{.Namespace}}/{{.Name}}</w:ResourceURI>
     {{if .SelectorSet}}<w:SelectorSet>
       {{range $key, $value := .SelectorSet}}<w:Selector Name="{{$key}}">{{$value}}</w:Selector>{{end}}
       </w:SelectorSet>{{end}}

@@ -17,7 +17,7 @@ func TestSimpleEnumerateOS(t *testing.T) {
 		t.Skip("linux is not supported.")
 	}
 	it := Enumerate(&Endpoint{Url: *win_url, User: *win_user, Password: *win_password},
-		"Win32_OperatingSystem", nil)
+		"root/cimv2", "Win32_OperatingSystem", nil)
 	defer it.Close()
 	count := 0
 	for it.Next() {
@@ -44,7 +44,7 @@ func TestSimpleEnumerateProcess(t *testing.T) {
 		t.Skip("linux is not supported.")
 	}
 	it := Enumerate(&Endpoint{Url: *win_url, User: *win_user, Password: *win_password},
-		"Win32_Process", nil)
+		"root/cimv2", "Win32_Process", nil)
 	defer it.Close()
 	count := 0
 	for it.Next() {
@@ -72,7 +72,7 @@ func TestSimpleEnumerateProcess(t *testing.T) {
 // }
 // 	WSMAN_DEBUG = true
 // 	it := Enumerate(&Endpoint{Url: *win_url, User: *win_user, Password: *win_password},
-// 		"Win32_Service", map[string]string{"Name": "spooler"})
+// 		"root/cimv2","Win32_Service", map[string]string{"Name": "spooler"})
 // 	defer it.Close()
 // 	count := 0
 // 	for it.Next() {
@@ -101,7 +101,7 @@ func TestSimpleEnumerateWin32_NetworkAdapterConfiguration(t *testing.T) {
 
 	WSMAN_DEBUG = true
 	it := Enumerate(&Endpoint{Url: *win_url, User: *win_user, Password: *win_password},
-		"Win32_NetworkAdapterConfiguration", nil)
+		"root/cimv2", "Win32_NetworkAdapterConfiguration", nil)
 	defer it.Close()
 	count := 0
 	for it.Next() {
@@ -128,7 +128,7 @@ func TestSimpleGetOS(t *testing.T) {
 		t.Skip("linux is not supported.")
 	}
 	m, e := Get(&Endpoint{Url: *win_url, User: *win_user, Password: *win_password},
-		"Win32_OperatingSystem", nil)
+		"root/cimv2", "Win32_OperatingSystem", nil)
 	if nil != e {
 		t.Error(e)
 		return
@@ -142,7 +142,7 @@ func TestSimpleGetServiceWithName(t *testing.T) {
 		t.Skip("linux is not supported.")
 	}
 	m, e := Get(&Endpoint{Url: *win_url, User: *win_user, Password: *win_password},
-		"Win32_Service", map[string]string{"Name": "spooler"})
+		"root/cimv2", "Win32_Service", map[string]string{"Name": "spooler"})
 	if nil != e {
 		t.Error(e)
 		return

@@ -130,7 +130,7 @@ func TestEnumerateSimple(t *testing.T) {
 	defer hsrv.Close()
 
 	check := func() {
-		it := Enumerate(&Endpoint{Url: hsrv.URL, User: "apd", Password: "123"}, "Win32_Process", nil)
+		it := Enumerate(&Endpoint{Url: hsrv.URL, User: "apd", Password: "123"}, "root/cimv2", "Win32_Process", nil)
 		count := 0
 		for it.Next() {
 			count++
@@ -206,7 +206,7 @@ func TestGetSimple(t *testing.T) {
 	defer hsrv.Close()
 
 	check := func() {
-		m, e := Get(&Endpoint{Url: hsrv.URL, User: "apd", Password: "123"}, "Win32_OperatingSystem", nil)
+		m, e := Get(&Endpoint{Url: hsrv.URL, User: "apd", Password: "123"}, "root/cimv2", "Win32_OperatingSystem", nil)
 
 		if nil != e {
 			t.Error(e)
@@ -244,7 +244,7 @@ func TestEnumerateErrorXml(t *testing.T) {
 	}))
 	defer hsrv.Close()
 
-	it := Enumerate(&Endpoint{Url: hsrv.URL, User: "apd", Password: "123"}, "Win32_Process", nil)
+	it := Enumerate(&Endpoint{Url: hsrv.URL, User: "apd", Password: "123"}, "root/cimv2", "Win32_Process", nil)
 	count := 0
 	for it.Next() {
 		count++
@@ -305,7 +305,7 @@ func TestEnumerateWithPull(t *testing.T) {
 	}))
 	defer hsrv.Close()
 
-	it := Enumerate(&Endpoint{Url: hsrv.URL, User: "apd", Password: "123"}, "Win32_Process", nil)
+	it := Enumerate(&Endpoint{Url: hsrv.URL, User: "apd", Password: "123"}, "root/cimv2", "Win32_Process", nil)
 	defer it.Close()
 
 	count := 0

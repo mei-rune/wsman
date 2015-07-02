@@ -13,6 +13,7 @@ import (
 
 type Enumerator struct {
 	*Endpoint
+	Namespace   string
 	Name        string
 	SelectorSet map[string]string
 	Context     string
@@ -30,8 +31,8 @@ type Enumerator struct {
 	current_value map[string]interface{}
 }
 
-func Enumerate(ep *Endpoint, name string, selectorSet map[string]string) *Enumerator {
-	return &Enumerator{Endpoint: ep, Name: name, SelectorSet: selectorSet}
+func Enumerate(ep *Endpoint, ns, name string, selectorSet map[string]string) *Enumerator {
+	return &Enumerator{Namespace: ns, Endpoint: ep, Name: name, SelectorSet: selectorSet}
 }
 
 func (c *Enumerator) EnableDebug() {
@@ -64,7 +65,7 @@ next_with_context:
 		var input Deliverable
 		var responseName string
 		if !c.is_pull {
-			input = &envelope.Enumerate{MessageId: Uuid(),
+			input = &envelope.Enumerate{Namespace: c.Namespace, MessageId: Uuid(),
 				Name: c.Name, SelectorSet: c.SelectorSet}
 			responseName = "EnumerateResponse"
 			c.is_pull = true
@@ -73,7 +74,7 @@ next_with_context:
 				c.err = errors.New("EnumerationContext is empty.")
 				return false
 			}
-			input = &envelope.Pull{MessageId: Uuid(),
+			input = &envelope.Pull{Namespace: c.Namespace, MessageId: Uuid(),
 				Name: c.Name, SelectorSet: c.SelectorSet, Context: c.Context}
 			responseName = "PullResponse"
 		}

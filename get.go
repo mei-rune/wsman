@@ -3,11 +3,14 @@ package wsman
 import (
 	"bytes"
 	"encoding/xml"
+
 	"github.com/runner-mei/wsman/envelope"
 )
 
-func Get(ep *Endpoint, name string, selectorSet map[string]string) (map[string]interface{}, error) {
-	input := &envelope.Get{MessageId: Uuid(),
+func Get(ep *Endpoint, ns, name string, selectorSet map[string]string) (map[string]interface{}, error) {
+	input := &envelope.Get{
+		Namespace:   ns,
+		MessageId:   Uuid(),
 		Name:        name,
 		SelectorSet: selectorSet}
 	reader, err := ep.Deliver(bytes.NewBufferString(input.Xml()))
