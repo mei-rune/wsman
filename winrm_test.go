@@ -115,7 +115,7 @@ func TestSimpleEnumerateWin32_NetworkAdapterConfiguration(t *testing.T) {
 		t.Log(m)
 	}
 
-	if 20 > count {
+	if 10 > count {
 		t.Error("excepted count is 1, actual is ", count)
 	}
 	if nil != it.Err() {

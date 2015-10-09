@@ -20,14 +20,9 @@ func Get(ep *Endpoint, ns, name string, selectorSet map[string]string) (map[stri
 	defer closeReader(reader)
 
 	decoder := xml.NewDecoder(reader)
-	ok, err := locateElements(decoder, []string{"Envelope", "Body"})
-	if nil != err {
+	if err = ReadEnvelopeBody(decoder); nil != err {
 		return nil, err
 	}
-	if !ok {
-		return nil, ElementNotExists("Envelope/Body")
-	}
-
 	_, _, err = nextElement(decoder)
 	if nil != err {
 		return nil, err

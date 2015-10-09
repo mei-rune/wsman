@@ -5,9 +5,9 @@ import (
 	"encoding/base64"
 	"encoding/xml"
 	"errors"
-	"github.com/runner-mei/wsman/envelope"
-	"io/ioutil"
 	"strings"
+
+	"github.com/runner-mei/wsman/envelope"
 )
 
 type Shell struct {
@@ -25,70 +25,72 @@ func NewShell(endpoint, user, pass string) (*Shell, error) {
 		return nil, err
 	}
 	defer closeReader(reader)
-	var bytesReader *bytes.Reader
-	if rd, ok := reader.(*bytes.Reader); ok {
-		bytesReader = rd
-	} else if buffer, ok := reader.(*bytes.Buffer); ok {
-		bytesReader = bytes.NewReader(buffer.Bytes())
-	} else {
-		all, err := ioutil.ReadAll(reader)
-		if nil != err {
-			return nil, err
-		}
-		bytesReader = bytes.NewReader(all)
-	}
 
-	decoder := xml.NewDecoder(bytesReader)
-	ok, err := locateElements(decoder, []string{"Envelope", "Body", "ResourceCreated",
-		"ReferenceParameters", "SelectorSet"})
-	if nil != err {
-		return nil, errors.New("locate 'Envelope/Body/ResourceCreated/ReferenceParameters/SelectorSet' failed, " + err.Error())
+	decoder := xml.NewDecoder(reader)
+	if err := ReadEnvelopeBody(decoder); nil != err {
+		return nil, err
 	}
-	if !ok {
-		bytesReader.Seek(0, 0)
-		decoder = xml.NewDecoder(bytesReader)
-		ok, err := locateElements(decoder, []string{"Envelope", "Body", "Shell", "ShellId"})
-		if nil != err {
-			return nil, errors.New("locate 'Envelope/Body/Shell/ShellId' failed, " + err.Error())
-		}
-		if !ok {
-			return nil, ElementNotExists("Envelope/Body/Shell/ShellId' or 'Envelope/Body/ResourceCreated/ReferenceParameters/SelectorSet")
-		}
-		id, err := readXmlText(decoder)
-		if nil != err {
-			return nil, errors.New("read 'ShellId' from the response failed, " + err.Error())
-		}
-		return &Shell{ep, id}, nil
-	}
-
-	var id string
 	for {
-		nm, attrs, err := nextElement(decoder)
-		if nil != err {
-			return nil, errors.New("enumerate 'SelectorSet' failed, " + err.Error())
-		}
-		if "Selector" != nm.Local {
-			return nil, errors.New("enumerate 'SelectorSet' failed, '" + nm.Local + "' is unknown.")
-		}
-		for _, attr := range attrs {
-			if "ShellId" == attr.Value {
-				if id, err = readXmlText(decoder); nil != err {
-					return nil, errors.New("read 'ShellId' from the response failed, " + err.Error())
+		nm, _, err := nextElement(decoder)
+		switch nm.Local {
+		case "ResourceCreated":
+
+			ok, err := locateElements(decoder, []string{"ReferenceParameters", "SelectorSet"})
+			if nil != err {
+				return nil, errors.New("locate 'Envelope/Body/ResourceCreated/ReferenceParameters/SelectorSet' failed, " + err.Error())
+			}
+			if !ok {
+				return nil, ElementNotExists("Envelope/Body/ResourceCreated/ReferenceParameters/SelectorSet")
+			}
+
+			var id string
+			for {
+				nm, attrs, err := nextElement(decoder)
+				if nil != err {
+					return nil, errors.New("enumerate 'SelectorSet' failed, " + err.Error())
 				}
-				break
+				if "Selector" != nm.Local {
+					return nil, errors.New("enumerate 'SelectorSet' failed, '" + nm.Local + "' is unknown.")
+				}
+				for _, attr := range attrs {
+					if "ShellId" == attr.Value {
+						if id, err = readXmlText(decoder); nil != err {
+							return nil, errors.New("read 'ShellId' from the response failed, " + err.Error())
+						}
+						break
+					}
+				}
+				if "" != id {
+					break
+				}
+				exitElement(decoder, 0)
+			}
+
+			if "" == id {
+				return nil, errors.New("ShellId is not found in the response.")
+			}
+
+			return &Shell{ep, id}, nil
+		case "Shell":
+			ok, err := locateElement(decoder, "ShellId")
+			if nil != err {
+				return nil, errors.New("locate 'Envelope/Body/Shell/ShellId' failed, " + err.Error())
+			}
+			if !ok {
+				return nil, ElementNotExists("Envelope/Body/Shell/ShellId")
+			}
+			id, err := readXmlText(decoder)
+			if nil != err {
+				return nil, errors.New("read 'ShellId' from the response failed, " + err.Error())
+			}
+			return &Shell{ep, id}, nil
+		default:
+			if err = skipElement(decoder, 0); nil != err {
+				return nil, err
 			}
 		}
-		if "" != id {
-			break
-		}
-		exitElement(decoder, 0)
 	}
-
-	if "" == id {
-		return nil, errors.New("ShellId is not found in the response.")
-	}
-
-	return &Shell{ep, id}, nil
+	return nil, errors.New("Envelope/Body/ResourceCreated or Envelope/Body/Shell isn't exists.")
 }
 
 func (s *Shell) NewCommand(cmd string) (string, error) {
@@ -100,8 +102,12 @@ func (s *Shell) NewCommand(cmd string) (string, error) {
 	defer closeReader(reader)
 
 	decoder := xml.NewDecoder(reader)
-	ok, err := locateElements(decoder, []string{"Envelope", "Body", "CommandResponse",
-		"CommandId"})
+
+	if err := ReadEnvelopeBody(decoder); nil != err {
+		return "", err
+	}
+
+	ok, err := locateElements(decoder, []string{"CommandResponse", "CommandId"})
 	if nil != err {
 		return "", errors.New("locate 'Envelope/Body/CommandResponse/CommandId' failed, " + err.Error())
 	}
@@ -138,12 +144,9 @@ func (s *Shell) Read(cmd_id string) (*CommandResult, error) {
 	defer closeReader(reader)
 
 	decoder := xml.NewDecoder(reader)
-	ok, err := locateElements(decoder, []string{"Envelope", "Body", "ReceiveResponse"})
-	if nil != err {
-		return nil, errors.New("locate 'Envelope/Body/ReceiveResponse' failed, " + err.Error())
-	}
-	if !ok {
-		return nil, ElementNotExists("Envelope/Body/ReceiveResponse")
+
+	if err := ReadEnvelopeResponse(decoder, "ReceiveResponse"); nil != err {
+		return nil, err
 	}
 
 	var state, exitCode string

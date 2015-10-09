@@ -324,3 +324,66 @@ const GetTemplate = `
   <s:Body/>
 </s:Envelope>
 `
+
+const (
+	DeliveryMODE_XMLSOAP_PUSH        = `http://schemas.xmlsoap.org/ws/2004/08/eventing/DeliveryModes/Push`
+	DeliveryMODE_WSMAN_PUSH_WITH_ACK = `http://schemas.dmtf.org/wbem/wsman/1/wsman/PushWithAck`
+	DeliveryMODE_WSMAN_Events        = `http://schemas.dmtf.org/wbem/wsman/1/wsman/Events`
+	DeliveryMODE_WSMAN_PULL          = `http://schemas.dmtf.org/wbem/wsman/1/wsman/Pull`
+)
+
+const SubscribeTemplate = `<s:Envelope xmlns:s="http://www.w3.org/2003/05/soap-envelope" 
+   xmlns:wsa="http://schemas.xmlsoap.org/ws/2004/08/addressing" 
+   xmlns:wse="http://schemas.xmlsoap.org/ws/2004/08/eventing" 
+   xmlns:wsen="http://schemas.xmlsoap.org/ws/2004/09/enumeration" 
+   xmlns:wsman="http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd">
+   <s:Header>
+     <wsa:To>http://RAVIBPERF59D.MIG.NET:80/wsman</wsa:To>
+     <wsman:ResourceURI s:mustUnderstand="true">http://schemas.microsoft.com/wbem/wsman/1/{{.Namespace}}/{{.Name}}</wsman:ResourceURI>
+     {{if .SelectorSet}}<w:SelectorSet>
+     {{range $key, $value := .SelectorSet}}<w:Selector Name="{{$key}}">{{$value}}</w:Selector>{{end}}
+     </w:SelectorSet>{{end}}
+     <wsa:ReplyTo>
+       <wsa:Address s:mustUnderstand="true">http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:Address>
+     </wsa:ReplyTo>
+     <wsa:Action s:mustUnderstand="true">http://schemas.xmlsoap.org/ws/2004/08/eventing/Subscribe</wsa:Action>
+     <wsman:MaxEnvelopeSize s:mustUnderstand="true">153600</wsman:MaxEnvelopeSize>
+     <wsa:MessageID>uuid:{{.MessageId}}</wsa:MessageID>
+     <wsman:OperationTimeout>PT60S</wsman:OperationTimeout>
+   </s:Header>
+   <s:Body>
+     <wse:Subscribe="">
+       <wse:EndTo>
+         <wsa:Address>{{.EndToAddress}}</wsa:Address>
+         <wsa:ReferenceProperties>
+           <wse:Identifier>{{.EndToIdentifier}}</wse:Identifier>
+         </wsa:ReferenceProperties>
+       </wse:EndTo>
+       <wse:Delivery Mode="{{.DeliveryMode}}">
+         <wsman:Heartbeats>PT300S</wsman:Heartbeats>
+         <wse:NotifyTo>
+           <wsa:Address>{{.RecvAddress}}</wsa:Address>
+           <wsa:ReferenceProperties>
+             <wse:Identifier>{{.RecvAddress}}</wse:Identifier>
+           </wsa:ReferenceProperties>
+         </wse:NotifyTo>
+         <wsman:MaxElements>20</wsman:MaxElements>
+         <wsman:MaxTime>PT30.000S</wsman:MaxTime>
+         <wsman:MaxEnvelopeSize Policy="Notify">153600</wsman:MaxEnvelopeSize>
+         <wsman:Locale xml:lang="en-US"/>
+         <wsman:ContentEncoding="">
+           UTF-8
+         </wsman:ContentEncoding>
+       </wse:Delivery>
+       <wse:Expires>PT3960732748.184S</wse:Expires>
+       <wsman:Filter>
+         <QueryList>
+           <Query Id="0">
+             <Select Path="Application">*</Select>
+           </Query>
+         </QueryList>
+        </wsman:Filter>]
+        <wsman:SendBookmarks/>
+     </wse:Subscribe>
+   </s:Body>
+ </s:Envelope>`

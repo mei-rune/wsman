@@ -95,14 +95,8 @@ next_with_context:
 			reader = io.TeeReader(reader, os.Stdout)
 		}
 		c.decoder = xml.NewDecoder(reader)
-		ok, err := locateElements(c.decoder, []string{"Envelope", "Body", responseName})
-		if nil != err {
+		if err = ReadEnvelopeResponse(c.decoder, responseName); nil != err {
 			c.err = err
-			return false
-		}
-
-		if !ok {
-			c.err = ElementNotExists("Envelope/Body/" + responseName)
 			return false
 		}
 	}

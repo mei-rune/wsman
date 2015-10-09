@@ -14,3 +14,10 @@ const (
 	NS_WSMAN_MSFT  = "http://schemas.microsoft.com/wbem/wsman/1/wsman.xsd"     // p:
 	NS_WSMAN_FAULT = "http://schemas.microsoft.com/wbem/wsman/1/wsmanfault"    // f:
 )
+
+// wmi      http://schemas.microsoft.com/wbem/wsman/1/wmi
+// wmicimv2 http://schemas.microsoft.com/wbem/wsman/1/wmi/root/cimv2
+// cimv2    http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2
+// winrm    http://schemas.microsoft.com/wbem/wsman/1
+// wsman    http://schemas.microsoft.com/wbem/wsman/1
+// shell    http://schemas.microsoft.com/wbem/wsman/1/windows/shell

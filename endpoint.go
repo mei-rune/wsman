@@ -306,6 +306,31 @@ func handleFault(r *http.Response) error {
 	return f
 }
 
+func doFault(decoder *xml.Decoder) (bool, error) {
+	return false, nil
+}
+
+// 	ok, err := locateElements(decoder, []string{"Envelope", "Body", "Fault"})
+// 	if !ok {
+// 		return false, err
+// 	}
+
+// 	if reason, _ := readXmlText(decoder); "" != reason {
+// 		f.Status = "FAULT: " + reason
+// 	}
+// }
+
+type ErrSoapFault struct {
+	Code    string
+	Subcode string
+	Reason  string
+	Detail  string
+}
+
+func (fault *ErrSoapFault) Error() string {
+	return fault.Detail
+}
+
 func ToBytes(bs [][]byte) []byte {
 	var buf bytes.Buffer
 	for _, b := range bs {
@@ -353,4 +378,149 @@ func Uuid() string {
 	}
 	uuid := fmt.Sprintf("%x-%x-%x-%x-%x", b[0:4], b[4:6], b[6:8], b[8:10], b[10:])
 	return uuid
+}
+
+func ReadEnvelopeBody(decoder *xml.Decoder) error {
+	ok, err := locateElement(decoder, "Envelope")
+	if nil != err {
+		return err
+	}
+	if !ok {
+		return ElementNotExists("Envelope")
+	}
+
+	var action string
+	for {
+		nm, _, err := nextElement(decoder)
+		switch nm.Local {
+		case "Header":
+			action, err = ReadEnvelopeHeader(decoder)
+			if nil != err {
+				return err
+			}
+		case "Body":
+			if "http://schemas.xmlsoap.org/ws/2004/08/addressing/fault" == strings.ToLower(strings.TrimSpace(action)) {
+				return ReadEnvelopeFault(decoder)
+			}
+			return nil
+		}
+	}
+}
+
+func ReadEnvelopeFault(decoder *xml.Decoder) error {
+	ok, err := locateElement(decoder, "Fault")
+	if nil != err {
+		return err
+	}
+	if !ok {
+		return errors.New("fault isn't exists in the FaultMessage.")
+	}
+
+	e := &ErrSoapFault{}
+	var state = 0
+	for {
+		t, err := decoder.Token()
+		if nil != err {
+			if io.EOF == err {
+				return e
+			}
+			return err
+		}
+
+		switch v := t.(type) {
+		case xml.EndElement:
+			switch state {
+			case 2: // SubCode
+				state = 1 // Code
+			default:
+				state = 0
+			}
+		case xml.StartElement:
+			switch v.Name.Local {
+			case "Code":
+				state = 1
+			case "Subcode":
+				state = 2
+			case "Value", "faultcode":
+				if code, err := readXmlText(decoder); nil != err {
+					return err
+				} else {
+					switch state {
+					case 2:
+						e.Subcode = code
+					default:
+						e.Code = code
+						if "" == e.Subcode {
+							e.Subcode = code
+						}
+					}
+				}
+			case "Text":
+				if txt, err := readXmlText(decoder); nil != err {
+					return err
+				} else {
+					e.Reason = txt
+				}
+			case "Reason":
+				state = 3
+			case "Detail":
+				if detail, err := readXmlText(decoder); nil != err {
+					return err
+				} else {
+					e.Detail = strings.TrimSpace(detail)
+				}
+			case "faultstring":
+				if detail, err := readXmlText(decoder); nil != err {
+					return err
+				} else {
+					e.Reason = detail
+					e.Detail = detail
+				}
+			default:
+				if e := skipElement(decoder, 0); nil != e {
+					return e
+				}
+			}
+		}
+	}
+}
+
+func ReadEnvelopeHeader(decoder *xml.Decoder) (string, error) {
+	var action string
+	for {
+		t, err := decoder.Token()
+		if nil != err {
+			return "", err
+		}
+
+		switch v := t.(type) {
+		case xml.EndElement:
+			return action, nil
+		case xml.StartElement:
+			switch v.Name.Local {
+			case "Action":
+				action, err = readXmlText(decoder)
+				if nil != err {
+					return "", err
+				}
+			default:
+				if e := skipElement(decoder, 0); nil != e {
+					return "", e
+				}
+			}
+		}
+	}
+}
+
+func ReadEnvelopeResponse(decoder *xml.Decoder, responseName string) error {
+	if err := ReadEnvelopeBody(decoder); nil != err {
+		return err
+	}
+
+	if ok, err := locateElement(decoder, responseName); nil != err {
+		return err
+	} else if !ok {
+		return ElementNotExists("Envelope/Body/" + responseName)
+	}
+	return nil
 }
