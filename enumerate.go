@@ -39,12 +39,13 @@ func (c *Enumerator) EnableDebug() {
 	c.is_debug = true
 }
 
-func (c *Enumerator) Close() {
+func (c *Enumerator) Close() (err error) {
 	if nil != c.reader {
-		closeReader(c.reader)
+		err = closeReader(c.reader)
 		c.reader = nil
 	}
 	c.decoder = nil
+	return
 }
 
 func (c *Enumerator) Next() bool {
@@ -156,7 +157,7 @@ func (c *Enumerator) Err() error {
 	return c.err
 }
 
-func (c *Enumerator) Map() (map[string]interface{}, error) {
+func (c *Enumerator) Value() (map[string]interface{}, error) {
 	//fmt.Println("=================== map")
 	if c.is_end || nil != c.err {
 		return nil, c.err
@@ -165,11 +166,17 @@ func (c *Enumerator) Map() (map[string]interface{}, error) {
 		return c.current_value, nil
 	}
 
-	m, e := toMap(c.decoder)
+	var e error
+	switch c.current_name.Local {
+	case "Event":
+		e = errors.New("EVENT IS NOT IMPLEMENTED")
+	default:
+		c.current_value, e = toMap(c.decoder)
+	}
 	if nil != e {
 		c.err = e
 		return nil, e
 	}
-	c.current_value = m
-	return m, nil
+
+	return c.current_value, nil
 }

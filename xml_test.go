@@ -8,6 +8,8 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+
+	"github.com/runner-mei/wsman/envelope"
 )
 
 var simple_enumerate_response = `
@@ -130,11 +132,11 @@ func TestEnumerateSimple(t *testing.T) {
 	defer hsrv.Close()
 
 	check := func() {
-		it := Enumerate(&Endpoint{Url: hsrv.URL, User: "apd", Password: "123"}, "root/cimv2", "Win32_Process", nil)
+		it := Enumerate(&Endpoint{Url: hsrv.URL, User: "apd", Password: "123"}, envelope.NS_WMI_CIMV2, "Win32_Process", nil)
 		count := 0
 		for it.Next() {
 			count++
-			m, e := it.Map()
+			m, e := it.Value()
 			if nil != e {
 				t.Error(e)
 				break
@@ -206,7 +208,7 @@ func TestGetSimple(t *testing.T) {
 	defer hsrv.Close()
 
 	check := func() {
-		m, e := Get(&Endpoint{Url: hsrv.URL, User: "apd", Password: "123"}, "root/cimv2", "Win32_OperatingSystem", nil)
+		m, e := Get(&Endpoint{Url: hsrv.URL, User: "apd", Password: "123"}, envelope.NS_WMI_CIMV2, "Win32_OperatingSystem", nil)
 
 		if nil != e {
 			t.Error(e)
@@ -244,11 +246,11 @@ func TestEnumerateErrorXml(t *testing.T) {
 	}))
 	defer hsrv.Close()
 
-	it := Enumerate(&Endpoint{Url: hsrv.URL, User: "apd", Password: "123"}, "root/cimv2", "Win32_Process", nil)
+	it := Enumerate(&Endpoint{Url: hsrv.URL, User: "apd", Password: "123"}, envelope.NS_WMI_CIMV2, "Win32_Process", nil)
 	count := 0
 	for it.Next() {
 		count++
-		m, e := it.Map()
+		m, e := it.Value()
 		if nil != e {
 			t.Error(e)
 			break
@@ -305,13 +307,13 @@ func TestEnumerateWithPull(t *testing.T) {
 	}))
 	defer hsrv.Close()
 
-	it := Enumerate(&Endpoint{Url: hsrv.URL, User: "apd", Password: "123"}, "root/cimv2", "Win32_Process", nil)
+	it := Enumerate(&Endpoint{Url: hsrv.URL, User: "apd", Password: "123"}, envelope.NS_WMI_CIMV2, "Win32_Process", nil)
 	defer it.Close()
 
 	count := 0
 	for it.Next() {
 		count++
-		m, e := it.Map()
+		m, e := it.Value()
 		if nil != e {
 			t.Error(e)
 			break

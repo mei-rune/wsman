@@ -253,11 +253,12 @@ func (ep *Endpoint) Deliver(reader io.Reader) (io.Reader, error) {
 	return response.Body, nil
 }
 
-func closeReader(reader io.Reader) {
+func closeReader(reader io.Reader) error {
 	io.Copy(ioutil.Discard, reader)
 	if closer, ok := reader.(io.Closer); ok {
-		closer.Close()
+		return closer.Close()
 	}
+	return nil
 }
 
 type HttpError struct {
@@ -399,7 +400,8 @@ func ReadEnvelopeBody(decoder *xml.Decoder) error {
 				return err
 			}
 		case "Body":
-			if "http://schemas.xmlsoap.org/ws/2004/08/addressing/fault" == strings.ToLower(strings.TrimSpace(action)) {
+			action = strings.ToLower(strings.TrimSpace(action))
+			if strings.HasSuffix(action, "/fault") {
 				return ReadEnvelopeFault(decoder)
 			}
 			return nil

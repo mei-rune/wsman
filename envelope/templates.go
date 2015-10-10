@@ -5,125 +5,6 @@ import (
 	"text/template"
 )
 
-type CreateShell struct {
-	MessageId string
-}
-
-var create_shell_template = template.Must(template.New("CreateShell").Parse(CreateShellTemplate))
-
-func (m *CreateShell) Xml() string {
-	return applyTemplate(create_shell_template, m)
-}
-
-type DeleteShell struct {
-	MessageId string
-	ShellId   string
-}
-
-var delete_shell_template = template.Must(template.New("DeleteShell").Parse(DeleteShellTemplate))
-
-func (m *DeleteShell) Xml() string {
-	return applyTemplate(delete_shell_template, m)
-}
-
-type CreateCommand struct {
-	MessageId   string
-	ShellId     string
-	CommandText string
-}
-
-var create_template = template.Must(template.New("CreateCommand").Parse(CreateCommandTemplate))
-
-func (m *CreateCommand) Xml() string {
-	return applyTemplate(create_template, m)
-}
-
-type Send struct {
-	MessageId string
-	ShellId   string
-	CommandId string
-	Content   string
-}
-
-var send_template = template.Must(template.New("Send").Parse(SendTemplate))
-
-func (m *Send) Xml() string {
-	return applyTemplate(send_template, m)
-}
-
-type Receive struct {
-	MessageId string
-	ShellId   string
-	CommandId string
-}
-
-var receive_template = template.Must(template.New("Receive").Parse(ReceiveTemplate))
-
-func (m *Receive) Xml() string {
-	return applyTemplate(receive_template, m)
-}
-
-type Signal struct {
-	MessageId string
-	ShellId   string
-	CommandId string
-}
-
-var signal_template = template.Must(template.New("Signal").Parse(SignalTemplate))
-
-func (m *Signal) Xml() string {
-	return applyTemplate(signal_template, m)
-}
-
-type Enumerate struct {
-	Namespace   string
-	MessageId   string
-	Name        string
-	SelectorSet map[string]string
-}
-
-var enumerate_template = template.Must(template.New("Enumerate").Parse(EnumerateTemplate))
-
-func (m *Enumerate) Xml() string {
-	return applyTemplate(enumerate_template, m)
-}
-
-type Pull struct {
-	Namespace   string
-	MessageId   string
-	Name        string
-	SelectorSet map[string]string
-	Context     string
-}
-
-var pull_template = template.Must(template.New("Pull").Parse(PullTemplate))
-
-func (m *Pull) Xml() string {
-	return applyTemplate(pull_template, m)
-}
-
-type Get struct {
-	Namespace   string
-	MessageId   string
-	Name        string
-	SelectorSet map[string]string
-}
-
-var get_template = template.Must(template.New("Get").Parse(GetTemplate))
-
-func (m *Get) Xml() string {
-	return applyTemplate(get_template, m)
-}
-
-func applyTemplate(t *template.Template, data interface{}) string {
-	var b bytes.Buffer
-	err := t.Execute(&b, data)
-	if err != nil {
-		panic(err)
-	}
-	return b.String()
-}
-
 const CreateShellTemplate = `<s:Envelope xmlns:s="` + NS_SOAP_ENV + `" xmlns:a="` + NS_ADDRESSING + `" xmlns:rsp="` + NS_WIN_SHELL + `" xmlns:w="` + NS_WSMAN_DMTF + `">
   <s:Header>
     <a:To>http://localhost:5985/wsman</a:To>
@@ -148,6 +29,16 @@ const CreateShellTemplate = `<s:Envelope xmlns:s="` + NS_SOAP_ENV + `" xmlns:a="
   </s:Body>
 </s:Envelope>`
 
+var create_shell_template = template.Must(template.New("CreateShell").Parse(CreateShellTemplate))
+
+type CreateShell struct {
+	MessageId string
+}
+
+func (m *CreateShell) Xml() string {
+	return applyTemplate(create_shell_template, m)
+}
+
 const DeleteShellTemplate = `<s:Envelope xmlns:s="` + NS_SOAP_ENV + `" xmlns:a="` + NS_ADDRESSING + `" xmlns:w="` + NS_WSMAN_DMTF + `">
   <s:Header>    
     <a:Action mustUnderstand="true">http://schemas.xmlsoap.org/ws/2004/09/transfer/Delete</a:Action>
@@ -166,6 +57,17 @@ const DeleteShellTemplate = `<s:Envelope xmlns:s="` + NS_SOAP_ENV + `" xmlns:a="
   </s:Header>
   <s:Body/>
 </s:Envelope>`
+
+var delete_shell_template = template.Must(template.New("DeleteShell").Parse(DeleteShellTemplate))
+
+type DeleteShell struct {
+	MessageId string
+	ShellId   string
+}
+
+func (m *DeleteShell) Xml() string {
+	return applyTemplate(delete_shell_template, m)
+}
 
 const CreateCommandTemplate = `<s:Envelope xmlns:s="` + NS_SOAP_ENV + `" xmlns:a="` + NS_ADDRESSING + `" xmlns:rsp="` + NS_WIN_SHELL + `" xmlns:w="` + NS_WSMAN_DMTF + `">
   <s:Header>
@@ -193,6 +95,18 @@ const CreateCommandTemplate = `<s:Envelope xmlns:s="` + NS_SOAP_ENV + `" xmlns:a
   </s:Body>
 </s:Envelope>`
 
+var create_template = template.Must(template.New("CreateCommand").Parse(CreateCommandTemplate))
+
+type CreateCommand struct {
+	MessageId   string
+	ShellId     string
+	CommandText string
+}
+
+func (m *CreateCommand) Xml() string {
+	return applyTemplate(create_template, m)
+}
+
 const SendTemplate = `<s:Envelope xmlns:s="` + NS_SOAP_ENV + `" xmlns:a="` + NS_ADDRESSING + `" xmlns:rsp="` + NS_WIN_SHELL + `" xmlns:w="` + NS_WSMAN_DMTF + `">
     <s:Header>
       <a:Action s:mustUnderstand="true">http://schemas.microsoft.com/wbem/wsman/1/windows/shell/Send</a:Action>
@@ -214,6 +128,19 @@ const SendTemplate = `<s:Envelope xmlns:s="` + NS_SOAP_ENV + `" xmlns:a="` + NS_
       </rsp:Send>
     </s:Body>
   </s:Envelope>`
+
+var send_template = template.Must(template.New("Send").Parse(SendTemplate))
+
+type Send struct {
+	MessageId string
+	ShellId   string
+	CommandId string
+	Content   string
+}
+
+func (m *Send) Xml() string {
+	return applyTemplate(send_template, m)
+}
 
 const ReceiveTemplate = `<s:Envelope xmlns:s="` + NS_SOAP_ENV + `" xmlns:a="` + NS_ADDRESSING + `" xmlns:rsp="` + NS_WIN_SHELL + `" xmlns:w="` + NS_WSMAN_DMTF + `">
   <s:Header>
@@ -237,6 +164,18 @@ const ReceiveTemplate = `<s:Envelope xmlns:s="` + NS_SOAP_ENV + `" xmlns:a="` + 
   </s:Body>
 </s:Envelope>`
 
+var receive_template = template.Must(template.New("Receive").Parse(ReceiveTemplate))
+
+type Receive struct {
+	MessageId string
+	ShellId   string
+	CommandId string
+}
+
+func (m *Receive) Xml() string {
+	return applyTemplate(receive_template, m)
+}
+
 const SignalTemplate = `<s:Envelope xmlns:s="` + NS_SOAP_ENV + `" xmlns:a="` + NS_ADDRESSING + `" xmlns:rsp="` + NS_WIN_SHELL + `" xmlns:w="` + NS_WSMAN_DMTF + `">
   <s:Header>
     <a:Action s:mustUnderstand="true">http://schemas.microsoft.com/wbem/wsman/1/windows/shell/Signal</a:Action>
@@ -259,12 +198,24 @@ const SignalTemplate = `<s:Envelope xmlns:s="` + NS_SOAP_ENV + `" xmlns:a="` + N
   </s:Body>
 </s:Envelope>`
 
+var signal_template = template.Must(template.New("Signal").Parse(SignalTemplate))
+
+type Signal struct {
+	MessageId string
+	ShellId   string
+	CommandId string
+}
+
+func (m *Signal) Xml() string {
+	return applyTemplate(signal_template, m)
+}
+
 const EnumerateTemplate = `<s:Envelope xmlns:s="` + NS_SOAP_ENV + `" xmlns:a="` + NS_ADDRESSING + `" xmlns:p="` + NS_WSMAN_MSFT + `" xmlns:w="` + NS_WSMAN_DMTF + `" xmlns:n="` + NS_ENUM + `">
   <s:Header>
     <a:Action s:mustUnderstand="true">http://schemas.xmlsoap.org/ws/2004/09/enumeration/Enumerate</a:Action>
     <a:MessageID>uuid:{{.MessageId}}</a:MessageID>
     <a:To>http://localhost:5985/wsman</a:To>
-    <w:ResourceURI s:mustUnderstand="true">http://schemas.microsoft.com/wbem/wsman/1/wmi/{{.Namespace}}/{{.Name}}</w:ResourceURI>
+    <w:ResourceURI s:mustUnderstand="true">{{.Namespace}}/{{.Name}}</w:ResourceURI>
     {{if .SelectorSet}}<w:SelectorSet>
       {{range $key, $value := .SelectorSet}}<w:Selector Name="{{$key}}">{{$value}}</w:Selector>{{end}}
     </w:SelectorSet>{{end}}
@@ -282,11 +233,24 @@ const EnumerateTemplate = `<s:Envelope xmlns:s="` + NS_SOAP_ENV + `" xmlns:a="` 
   </s:Body>
 </s:Envelope>`
 
+var enumerate_template = template.Must(template.New("Enumerate").Parse(EnumerateTemplate))
+
+type Enumerate struct {
+	Namespace   string
+	MessageId   string
+	Name        string
+	SelectorSet map[string]string
+}
+
+func (m *Enumerate) Xml() string {
+	return applyTemplate(enumerate_template, m)
+}
+
 const PullTemplate = `<s:Envelope xmlns:s="` + NS_SOAP_ENV + `" xmlns:a="` + NS_ADDRESSING + `" xmlns:p="` + NS_WSMAN_MSFT + `" xmlns:w="` + NS_WSMAN_DMTF + `" xmlns:n="` + NS_ENUM + `">
   <s:Header>
     <a:Action s:mustUnderstand="true">http://schemas.xmlsoap.org/ws/2004/09/enumeration/Pull</a:Action>
     <a:To>http://localhost:5985/wsman</a:To>
-    <w:ResourceURI s:mustUnderstand="true">http://schemas.microsoft.com/wbem/wsman/1/wmi/{{.Namespace}}/{{.Name}}</w:ResourceURI>
+    <w:ResourceURI s:mustUnderstand="true">{{.Namespace}}/{{.Name}}</w:ResourceURI>
     {{if .SelectorSet}}<w:SelectorSet>
       {{range $key, $value := .SelectorSet}}<w:Selector Name="{{$key}}">{{$value}}</w:Selector>{{end}}
     </w:SelectorSet>{{end}}
@@ -300,17 +264,30 @@ const PullTemplate = `<s:Envelope xmlns:s="` + NS_SOAP_ENV + `" xmlns:a="` + NS_
   <s:Body>
     <n:Pull>
       <n:EnumerationContext>{{.Context}}</n:EnumerationContext>
-      <n:MaxElements>32000</n:MaxElements>
+      <n:MaxElements>200</n:MaxElements>
     </n:Pull>
   </s:Body>
 </s:Envelope>`
 
-const GetTemplate = `
-<s:Envelope xmlns:s="http://www.w3.org/2003/05/soap-envelope" xmlns:a="http://schemas.xmlsoap.org/ws/2004/08/addressing" xmlns:w="http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd" xmlns:p="http://schemas.microsoft.com/wbem/wsman/1/wsman.xsd">
+var pull_template = template.Must(template.New("Pull").Parse(PullTemplate))
+
+type Pull struct {
+	Namespace   string
+	MessageId   string
+	Name        string
+	SelectorSet map[string]string
+	Context     string
+}
+
+func (m *Pull) Xml() string {
+	return applyTemplate(pull_template, m)
+}
+
+const GetTemplate = `<s:Envelope xmlns:s="` + NS_SOAP_ENV + `" xmlns:a="` + NS_ADDRESSING + `" xmlns:p="` + NS_WSMAN_MSFT + `" xmlns:w="` + NS_WSMAN_DMTF + `" xmlns:n="` + NS_ENUM + `">
   <s:Header>
     <a:Action s:mustUnderstand="true">http://schemas.xmlsoap.org/ws/2004/09/transfer/Get</a:Action>
     <a:To>http://localhost:5985/wsman</a:To>
-    <w:ResourceURI s:mustUnderstand="true">http://schemas.microsoft.com/wbem/wsman/1/wmi/{{.Namespace}}/{{.Name}}</w:ResourceURI>
+    <w:ResourceURI s:mustUnderstand="true">{{.Namespace}}/{{.Name}}</w:ResourceURI>
     {{if .SelectorSet}}<w:SelectorSet>
       {{range $key, $value := .SelectorSet}}<w:Selector Name="{{$key}}">{{$value}}</w:Selector>{{end}}
       </w:SelectorSet>{{end}}
@@ -325,65 +302,129 @@ const GetTemplate = `
 </s:Envelope>
 `
 
+var get_template = template.Must(template.New("Get").Parse(GetTemplate))
+
+type Get struct {
+	Namespace   string
+	MessageId   string
+	Name        string
+	SelectorSet map[string]string
+}
+
+func (m *Get) Xml() string {
+	return applyTemplate(get_template, m)
+}
+
+func applyTemplate(t *template.Template, data interface{}) string {
+	var b bytes.Buffer
+	err := t.Execute(&b, data)
+	if err != nil {
+		panic(err)
+	}
+	return b.String()
+}
+
+const SubscribeTemplate = `<s:Envelope xmlns:s="` + NS_SOAP_ENV + `" xmlns:a="` + NS_ADDRESSING + `" xmlns:w="` + NS_WSMAN_DMTF + `" xmlns:wse="` + NS_EVENTING + `">
+  <s:Header>
+    <a:To>http://localhost:5985/wsman</a:To>
+    <w:ResourceURI s:mustUnderstand="true">{{.Namespace}}/{{.Name}}</w:ResourceURI>
+    {{if .SelectorSet}}<w:SelectorSet>
+      {{range $key, $value := .SelectorSet}}<w:Selector Name="{{$key}}">{{$value}}</w:Selector>{{end}}
+    </w:SelectorSet>
+    {{end}}<a:ReplyTo>
+      <a:Address s:mustUnderstand="true">http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</a:Address>
+    </a:ReplyTo>
+    <a:Action s:mustUnderstand="true">http://schemas.xmlsoap.org/ws/2004/08/eventing/Subscribe</a:Action>
+    <w:MaxEnvelopeSize s:mustUnderstand="true">153600</w:MaxEnvelopeSize>
+    <a:MessageID>uuid:{{.MessageId}}</a:MessageID>
+    <w:OperationTimeout>PT60S</w:OperationTimeout>
+  </s:Header>
+  <s:Body>
+   <wse:Subscribe>{{if ne  .DeliveryMode "http://schemas.dmtf.org/wbem/wsman/1/wsman/Pull"}}<wse:EndTo>
+      <a:Address>{{.EndToAddress}}</a:Address>
+      <a:ReferenceProperties>
+        <wse:Identifier>{{.EndToIdentifier}}</wse:Identifier>
+      </a:ReferenceProperties>
+    </wse:EndTo>{{end}}{{if eq  .DeliveryMode "http://schemas.dmtf.org/wbem/wsman/1/wsman/Pull"}}
+    <wse:Delivery Mode="http://schemas.dmtf.org/wbem/wsman/1/wsman/Pull"/>
+    {{else}}<wse:Delivery Mode="{{.DeliveryMode}}">
+      <w:Heartbeats>PT300S</w:Heartbeats>
+      <wse:NotifyTo>
+        <a:Address>{{.RecvAddress}}</a:Address>
+        <a:ReferenceProperties>
+          <wse:Identifier>{{.RecvIdentifier}}</wse:Identifier>
+        </a:ReferenceProperties>
+      </wse:NotifyTo>
+      {{if eq  .DeliveryMode "http://schemas.dmtf.org/wbem/wsman/1/wsman/Events"}}
+      <w:MaxElements>200</w:MaxElements>
+      <w:MaxTime>PT30S</w:MaxTime>
+      <w:MaxEnvelopeSize Policy="Notify">1536000</w:MaxEnvelopeSize>
+      <w:ContentEncoding>UTF-8</w:ContentEncoding>
+      <w:ConnectionRetry Total="3">PT180S</w:ConnectionRetry>{{end}}
+    </wse:Delivery>{{end}}
+    <wse:Expires>PT300S</wse:Expires>
+    {{if .QueryList}}<w:Filter Dialect="http://schemas.microsoft.com/win/2004/08/events/eventquery">
+      <QueryList>
+        {{range $key, $value := .QueryList}}<Query Id="{{$key}}">
+        {{range $pvalue := $value}}<Select Path="{{$pvalue.Path}}">{{$pvalue.Value}}</Select>{{end}}
+        </Query>{{end}}
+      </QueryList>
+    </w:Filter>{{end}}
+    {{if .SendBookmarks}}<w:SendBookmarks/>{{end}}
+    </wse:Subscribe>
+  </s:Body>
+  </s:Envelope>`
+
+var subscribe_template = template.Must(template.New("Subscribe").Parse(SubscribeTemplate))
+
+type Subscribe struct {
+	Namespace   string
+	MessageId   string
+	Name        string
+	SelectorSet map[string]string
+
+	DeliveryMode    string
+	EndToAddress    string
+	EndToIdentifier string
+	RecvAddress     string
+	RecvIdentifier  string
+	QueryList       map[string][]QueryFilter
+	SendBookmarks   bool
+}
+
 const (
-	DeliveryMODE_XMLSOAP_PUSH        = `http://schemas.xmlsoap.org/ws/2004/08/eventing/DeliveryModes/Push`
-	DeliveryMODE_WSMAN_PUSH_WITH_ACK = `http://schemas.dmtf.org/wbem/wsman/1/wsman/PushWithAck`
-	DeliveryMODE_WSMAN_Events        = `http://schemas.dmtf.org/wbem/wsman/1/wsman/Events`
-	DeliveryMODE_WSMAN_PULL          = `http://schemas.dmtf.org/wbem/wsman/1/wsman/Pull`
+	DELIVERYMODE_XMLSOAP_PUSH        = `http://schemas.xmlsoap.org/ws/2004/08/eventing/DeliveryModes/Push`
+	DELIVERYMODE_WSMAN_PUSH_WITH_ACK = `http://schemas.dmtf.org/wbem/wsman/1/wsman/PushWithAck`
+	DELIVERYMODE_WSMAN_EVENTS        = `http://schemas.dmtf.org/wbem/wsman/1/wsman/Events`
+	DELIVERYMODE_WSMAN_PULL          = `http://schemas.dmtf.org/wbem/wsman/1/wsman/Pull`
 )
 
-const SubscribeTemplate = `<s:Envelope xmlns:s="http://www.w3.org/2003/05/soap-envelope" 
-   xmlns:wsa="http://schemas.xmlsoap.org/ws/2004/08/addressing" 
-   xmlns:wse="http://schemas.xmlsoap.org/ws/2004/08/eventing" 
-   xmlns:wsen="http://schemas.xmlsoap.org/ws/2004/09/enumeration" 
-   xmlns:wsman="http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd">
-   <s:Header>
-     <wsa:To>http://RAVIBPERF59D.MIG.NET:80/wsman</wsa:To>
-     <wsman:ResourceURI s:mustUnderstand="true">http://schemas.microsoft.com/wbem/wsman/1/{{.Namespace}}/{{.Name}}</wsman:ResourceURI>
-     {{if .SelectorSet}}<w:SelectorSet>
-     {{range $key, $value := .SelectorSet}}<w:Selector Name="{{$key}}">{{$value}}</w:Selector>{{end}}
-     </w:SelectorSet>{{end}}
-     <wsa:ReplyTo>
-       <wsa:Address s:mustUnderstand="true">http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:Address>
-     </wsa:ReplyTo>
-     <wsa:Action s:mustUnderstand="true">http://schemas.xmlsoap.org/ws/2004/08/eventing/Subscribe</wsa:Action>
-     <wsman:MaxEnvelopeSize s:mustUnderstand="true">153600</wsman:MaxEnvelopeSize>
-     <wsa:MessageID>uuid:{{.MessageId}}</wsa:MessageID>
-     <wsman:OperationTimeout>PT60S</wsman:OperationTimeout>
-   </s:Header>
-   <s:Body>
-     <wse:Subscribe="">
-       <wse:EndTo>
-         <wsa:Address>{{.EndToAddress}}</wsa:Address>
-         <wsa:ReferenceProperties>
-           <wse:Identifier>{{.EndToIdentifier}}</wse:Identifier>
-         </wsa:ReferenceProperties>
-       </wse:EndTo>
-       <wse:Delivery Mode="{{.DeliveryMode}}">
-         <wsman:Heartbeats>PT300S</wsman:Heartbeats>
-         <wse:NotifyTo>
-           <wsa:Address>{{.RecvAddress}}</wsa:Address>
-           <wsa:ReferenceProperties>
-             <wse:Identifier>{{.RecvAddress}}</wse:Identifier>
-           </wsa:ReferenceProperties>
-         </wse:NotifyTo>
-         <wsman:MaxElements>20</wsman:MaxElements>
-         <wsman:MaxTime>PT30.000S</wsman:MaxTime>
-         <wsman:MaxEnvelopeSize Policy="Notify">153600</wsman:MaxEnvelopeSize>
-         <wsman:Locale xml:lang="en-US"/>
-         <wsman:ContentEncoding="">
-           UTF-8
-         </wsman:ContentEncoding>
-       </wse:Delivery>
-       <wse:Expires>PT3960732748.184S</wse:Expires>
-       <wsman:Filter>
-         <QueryList>
-           <Query Id="0">
-             <Select Path="Application">*</Select>
-           </Query>
-         </QueryList>
-        </wsman:Filter>]
-        <wsman:SendBookmarks/>
-     </wse:Subscribe>
-   </s:Body>
+type QueryFilter struct {
+	Path  string
+	Value string
+}
+
+func (m *Subscribe) Xml() string {
+	return applyTemplate(subscribe_template, m)
+}
+
+const UnsubscribeTemplate = `<s:Envelope xmlns:s="` + NS_SOAP_ENV + `" xmlns:a="` + NS_ADDRESSING + `" xmlns:w="` + NS_WSMAN_DMTF + `" xmlns:wse="` + NS_EVENTING + `">
+  <s:Header>
+    <a:To>http://localhost:5985/wsman</a:To>
+    <w:ResourceURI s:mustUnderstand="true">{{.Namespace}}/{{.Name}}</w:ResourceURI>
+    {{if .SelectorSet}}<w:SelectorSet>
+    {{range $key, $value := .SelectorSet}}<w:Selector Name="{{$key}}">{{$value}}</w:Selector>{{end}}
+    </w:SelectorSet>{{end}}
+    <a:ReplyTo>
+      <a:Address s:mustUnderstand="true">http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</a:Address>
+    </a:ReplyTo>
+    <a:Action s:mustUnderstand="true">http://schemas.xmlsoap.org/ws/2004/08/eventing/Unsubscribe</a:Action>
+    <w:MaxEnvelopeSize s:mustUnderstand="true">153600</w:MaxEnvelopeSize>
+    <a:MessageID>uuid:{{.MessageId}}</a:MessageID>
+    <w:OperationTimeout>PT60S</w:OperationTimeout>
+  </s:Header>
+  <s:Body>
+    <wse:Unsubscribe>
+    </wse:Unsubscribe>
+  </s:Body>
  </s:Envelope>`

@@ -4,10 +4,12 @@ import (
 	"flag"
 	"runtime"
 	"testing"
+
+	"github.com/runner-mei/wsman/envelope"
 )
 
 var (
-	win_url      = flag.String("win_url", "http://127.0.0.1:5985/wsman", "")
+	win_url      = flag.String("win_url", "http://127.0.0.1:3907/wsman", "")
 	win_user     = flag.String("win_user", "meifakun", "")
 	win_password = flag.String("win_password", "mfk", "")
 )
@@ -17,12 +19,12 @@ func TestSimpleEnumerateOS(t *testing.T) {
 		t.Skip("linux is not supported.")
 	}
 	it := Enumerate(&Endpoint{Url: *win_url, User: *win_user, Password: *win_password},
-		"root/cimv2", "Win32_OperatingSystem", nil)
+		envelope.NS_WMI_CIMV2, "Win32_OperatingSystem", nil)
 	defer it.Close()
 	count := 0
 	for it.Next() {
 		count++
-		m, e := it.Map()
+		m, e := it.Value()
 		if nil != e {
 			t.Error(e)
 			break
@@ -44,12 +46,12 @@ func TestSimpleEnumerateProcess(t *testing.T) {
 		t.Skip("linux is not supported.")
 	}
 	it := Enumerate(&Endpoint{Url: *win_url, User: *win_user, Password: *win_password},
-		"root/cimv2", "Win32_Process", nil)
+		envelope.NS_WMI_CIMV2, "Win32_Process", nil)
 	defer it.Close()
 	count := 0
 	for it.Next() {
 		count++
-		m, e := it.Map()
+		m, e := it.Value()
 		if nil != e {
 			t.Error(e)
 			break
@@ -72,7 +74,7 @@ func TestSimpleEnumerateProcess(t *testing.T) {
 // }
 // 	WSMAN_DEBUG = true
 // 	it := Enumerate(&Endpoint{Url: *win_url, User: *win_user, Password: *win_password},
-// 		"root/cimv2","Win32_Service", map[string]string{"Name": "spooler"})
+// 		envelope.NS_WMI_CIMV2,"Win32_Service", map[string]string{"Name": "spooler"})
 // 	defer it.Close()
 // 	count := 0
 // 	for it.Next() {
@@ -101,12 +103,12 @@ func TestSimpleEnumerateWin32_NetworkAdapterConfiguration(t *testing.T) {
 
 	WSMAN_DEBUG = true
 	it := Enumerate(&Endpoint{Url: *win_url, User: *win_user, Password: *win_password},
-		"root/cimv2", "Win32_NetworkAdapterConfiguration", nil)
+		envelope.NS_WMI_CIMV2, "Win32_NetworkAdapterConfiguration", nil)
 	defer it.Close()
 	count := 0
 	for it.Next() {
 		count++
-		m, e := it.Map()
+		m, e := it.Value()
 		if nil != e {
 			t.Error(e)
 			break
@@ -128,7 +130,7 @@ func TestSimpleGetOS(t *testing.T) {
 		t.Skip("linux is not supported.")
 	}
 	m, e := Get(&Endpoint{Url: *win_url, User: *win_user, Password: *win_password},
-		"root/cimv2", "Win32_OperatingSystem", nil)
+		envelope.NS_WMI_CIMV2, "Win32_OperatingSystem", nil)
 	if nil != e {
 		t.Error(e)
 		return
@@ -142,7 +144,7 @@ func TestSimpleGetServiceWithName(t *testing.T) {
 		t.Skip("linux is not supported.")
 	}
 	m, e := Get(&Endpoint{Url: *win_url, User: *win_user, Password: *win_password},
-		"root/cimv2", "Win32_Service", map[string]string{"Name": "spooler"})
+		envelope.NS_WMI_CIMV2, "Win32_Service", map[string]string{"Name": "spooler"})
 	if nil != e {
 		t.Error(e)
 		return
