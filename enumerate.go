@@ -189,7 +189,7 @@ func ReadEvent(decoder *xml.Decoder) (map[string]interface{}, error) {
 			if io.EOF == err {
 				return results, nil
 			}
-			return err
+			return nil, err
 		}
 
 		switch v := t.(type) {
@@ -206,8 +206,8 @@ func ReadEvent(decoder *xml.Decoder) (map[string]interface{}, error) {
 					return nil, err
 				}
 			default:
-				if e := skipElement(decoder, 0); nil != e {
-					return e
+				if err = skipElement(decoder, 0); nil != err {
+					return nil, err
 				}
 			}
 		}
