@@ -224,7 +224,10 @@ const EnumerateTemplate = `<s:Envelope xmlns:s="` + NS_SOAP_ENV + `" xmlns:a="` 
     </a:ReplyTo>
     <w:MaxEnvelopeSize s:mustUnderstand="true">153600</w:MaxEnvelopeSize>
     <w:OperationTimeout>PT60S</w:OperationTimeout>
-  </s:Header>
+    {{if .OptionSet}}<w:OptionSet>
+      {{range $key, $value := .OptionSet}}<w:Option Name="{{$key}}">{{$value}}</w:Option>{{end}}
+    </w:OptionSet>
+  {{end}}</s:Header>
   <s:Body>
     <n:Enumerate>
       <w:OptimizeEnumeration/>
@@ -240,6 +243,7 @@ type Enumerate struct {
 	MessageId   string
 	Name        string
 	SelectorSet map[string]string
+	OptionSet   map[string]string
 }
 
 func (m *Enumerate) Xml() string {
@@ -260,7 +264,10 @@ const PullTemplate = `<s:Envelope xmlns:s="` + NS_SOAP_ENV + `" xmlns:a="` + NS_
     <w:MaxEnvelopeSize s:mustUnderstand="true">153600</w:MaxEnvelopeSize>
     <a:MessageID>uuid:{{.MessageId}}</a:MessageID>
     <w:OperationTimeout>{{if eq .Timeout 0}}PT60S{{else}}PT{{.Timeout}}S{{end}}</w:OperationTimeout>
-  </s:Header>
+    {{if .OptionSet}}<w:OptionSet>
+      {{range $key, $value := .OptionSet}}<w:Option Name="{{$key}}">{{$value}}</w:Option>{{end}}
+    </w:OptionSet>
+  {{end}}</s:Header>
   <s:Body>
     <n:Pull>
       <n:EnumerationContext>{{.Context}}</n:EnumerationContext>
@@ -278,6 +285,7 @@ type Pull struct {
 	SelectorSet map[string]string
 	Context     string
 	Timeout     uint
+	OptionSet   map[string]string
 }
 
 func (m *Pull) Xml() string {
@@ -298,7 +306,10 @@ const GetTemplate = `<s:Envelope xmlns:s="` + NS_SOAP_ENV + `" xmlns:a="` + NS_A
     <w:MaxEnvelopeSize s:mustUnderstand="true">153600</w:MaxEnvelopeSize>
     <a:MessageID>uuid:{{.MessageId}}</a:MessageID>
     <w:OperationTimeout>PT60S</w:OperationTimeout>
-  </s:Header>
+    {{if .OptionSet}}<w:OptionSet xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+      {{range $key, $value := .OptionSet}}<w:Option Name="{{$key}}">{{$value}}</w:Option>{{end}}
+    </w:OptionSet>
+  {{end}}</s:Header>
   <s:Body/>
 </s:Envelope>
 `
@@ -310,6 +321,7 @@ type Get struct {
 	MessageId   string
 	Name        string
 	SelectorSet map[string]string
+	OptionSet   map[string]string
 }
 
 func (m *Get) Xml() string {
@@ -339,6 +351,11 @@ const SubscribeTemplate = `<s:Envelope xmlns:s="` + NS_SOAP_ENV + `" xmlns:a="` 
     <w:MaxEnvelopeSize s:mustUnderstand="true">153600</w:MaxEnvelopeSize>
     <a:MessageID>uuid:{{.MessageId}}</a:MessageID>
     <w:OperationTimeout>PT60S</w:OperationTimeout>
+    <w:OptionSet xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+      <w:Option Name="SubscriptionName">collection3</w:Option>
+      <w:Option Name="ContentFormat">RenderedText</w:Option>
+      <w:Option Name="IgnoreChannelError" xsi:nil="true"/>
+    </w:OptionSet> 
   </s:Header>
   <s:Body>
    <wse:Subscribe>{{if ne  .DeliveryMode "http://schemas.dmtf.org/wbem/wsman/1/wsman/Pull"}}<wse:EndTo>

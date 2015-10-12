@@ -16,6 +16,7 @@ type Enumerator struct {
 	Namespace   string
 	Name        string
 	SelectorSet map[string]string
+	OptionSet   map[string]string
 	Context     string
 
 	is_debug          bool
@@ -67,7 +68,7 @@ next_with_context:
 		var responseName string
 		if !c.is_pull {
 			input = &envelope.Enumerate{Namespace: c.Namespace, MessageId: Uuid(),
-				Name: c.Name, SelectorSet: c.SelectorSet}
+				Name: c.Name, SelectorSet: c.SelectorSet, OptionSet: c.OptionSet}
 			responseName = "EnumerateResponse"
 			c.is_pull = true
 		} else {
@@ -76,7 +77,7 @@ next_with_context:
 				return false
 			}
 			input = &envelope.Pull{Namespace: c.Namespace, MessageId: Uuid(),
-				Name: c.Name, SelectorSet: c.SelectorSet, Context: c.Context}
+				Name: c.Name, SelectorSet: c.SelectorSet, OptionSet: c.OptionSet, Context: c.Context}
 			responseName = "PullResponse"
 		}
 

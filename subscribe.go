@@ -69,6 +69,7 @@ func SubscribeByPull(ep *Endpoint, ns, name string, selectorSet map[string]strin
 		Endpoint:    ep,
 		Name:        name,
 		SelectorSet: selectorSet,
+		OptionSet:   map[string]string{"ContentFormat": "RenderedText", "SubscriptionName": "hw_subscription"},
 		Context:     context,
 		is_pull:     true}, nil
 }
