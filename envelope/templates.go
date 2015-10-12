@@ -228,7 +228,7 @@ const EnumerateTemplate = `<s:Envelope xmlns:s="` + NS_SOAP_ENV + `" xmlns:a="` 
   <s:Body>
     <n:Enumerate>
       <w:OptimizeEnumeration/>
-      <w:MaxElements>32000</w:MaxElements>
+      <w:MaxElements>200</w:MaxElements>
     </n:Enumerate>
   </s:Body>
 </s:Envelope>`
