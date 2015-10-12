@@ -180,3 +180,44 @@ func (c *Enumerator) Value() (map[string]interface{}, error) {
 
 	return c.current_value, nil
 }
+
+func ReadEvent(decoder *xml.Decoder) (map[string]interface{}, error) {
+	results := map[string]interface{}{}
+	for {
+		t, err := decoder.Token()
+		if nil != err {
+			if io.EOF == err {
+				return results, nil
+			}
+			return err
+		}
+
+		switch v := t.(type) {
+		case xml.EndElement:
+			return results, nil
+		case xml.StartElement:
+			switch v.Name.Local {
+			case "System":
+				if err = ReadEventSystemElements(decoder, results); nil != err {
+					return nil, err
+				}
+			case "EventData":
+				if err = ReadEventDataElements(decoder, results); nil != err {
+					return nil, err
+				}
+			default:
+				if e := skipElement(decoder, 0); nil != e {
+					return e
+				}
+			}
+		}
+	}
+}
+
+func ReadEventSystemElements(decoder *xml.Decoder, results map[string]interface{}) error {
+	return errors.New("NOT IMPLEMENTED")
+}
+
+func ReadEventDataElements(decoder *xml.Decoder, results map[string]interface{}) error {
+	return errors.New("NOT IMPLEMENTED")
+}

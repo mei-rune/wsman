@@ -259,7 +259,7 @@ const PullTemplate = `<s:Envelope xmlns:s="` + NS_SOAP_ENV + `" xmlns:a="` + NS_
     </a:ReplyTo>
     <w:MaxEnvelopeSize s:mustUnderstand="true">153600</w:MaxEnvelopeSize>
     <a:MessageID>uuid:{{.MessageId}}</a:MessageID>
-    <w:OperationTimeout>PT60S</w:OperationTimeout>
+    <w:OperationTimeout>{{if eq .Timeout 0}}PT60S{{else}}PT{{.Timeout}}S{{end}}</w:OperationTimeout>
   </s:Header>
   <s:Body>
     <n:Pull>
@@ -277,6 +277,7 @@ type Pull struct {
 	Name        string
 	SelectorSet map[string]string
 	Context     string
+	Timeout     uint
 }
 
 func (m *Pull) Xml() string {
@@ -377,6 +378,13 @@ const SubscribeTemplate = `<s:Envelope xmlns:s="` + NS_SOAP_ENV + `" xmlns:a="` 
 
 var subscribe_template = template.Must(template.New("Subscribe").Parse(SubscribeTemplate))
 
+const (
+	DELIVERYMODE_XMLSOAP_PUSH        = `http://schemas.xmlsoap.org/ws/2004/08/eventing/DeliveryModes/Push`
+	DELIVERYMODE_WSMAN_PUSH_WITH_ACK = `http://schemas.dmtf.org/wbem/wsman/1/wsman/PushWithAck`
+	DELIVERYMODE_WSMAN_EVENTS        = `http://schemas.dmtf.org/wbem/wsman/1/wsman/Events`
+	DELIVERYMODE_WSMAN_PULL          = `http://schemas.dmtf.org/wbem/wsman/1/wsman/Pull`
+)
+
 type Subscribe struct {
 	Namespace   string
 	MessageId   string
@@ -391,13 +399,6 @@ type Subscribe struct {
 	QueryList       map[string][]QueryFilter
 	SendBookmarks   bool
 }
-
-const (
-	DELIVERYMODE_XMLSOAP_PUSH        = `http://schemas.xmlsoap.org/ws/2004/08/eventing/DeliveryModes/Push`
-	DELIVERYMODE_WSMAN_PUSH_WITH_ACK = `http://schemas.dmtf.org/wbem/wsman/1/wsman/PushWithAck`
-	DELIVERYMODE_WSMAN_EVENTS        = `http://schemas.dmtf.org/wbem/wsman/1/wsman/Events`
-	DELIVERYMODE_WSMAN_PULL          = `http://schemas.dmtf.org/wbem/wsman/1/wsman/Pull`
-)
 
 type QueryFilter struct {
 	Path  string
