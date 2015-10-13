@@ -352,7 +352,7 @@ const SubscribeTemplate = `<s:Envelope xmlns:s="` + NS_SOAP_ENV + `" xmlns:a="` 
     <a:MessageID>uuid:{{.MessageId}}</a:MessageID>
     <w:OperationTimeout>PT60S</w:OperationTimeout>
     <w:OptionSet xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-      <w:Option Name="SubscriptionName">collection3</w:Option>
+      <w:Option Name="SubscriptionName">hw_subscription</w:Option>
       <w:Option Name="ContentFormat">RenderedText</w:Option>
       <w:Option Name="IgnoreChannelError" xsi:nil="true"/>
     </w:OptionSet> 
