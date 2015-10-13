@@ -185,7 +185,7 @@ func toMap(decoder *xml.Decoder) (map[string]interface{}, error) {
 				} else {
 					if "" == txt && len(v.Attr) > 0 {
 						for _, attr := range v.Attr {
-							if "SystemTime" == attr.Name {
+							if "SystemTime" == attr.Name.Local {
 								txt = attr.Value
 							}
 						}
