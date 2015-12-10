@@ -193,7 +193,7 @@ const SignalTemplate = `<s:Envelope xmlns:s="` + NS_SOAP_ENV + `" xmlns:a="` + N
   </s:Header>
   <s:Body>
     <rsp:Signal xmlns:rsp="http://schemas.microsoft.com/wbem/wsman/1/windows/shell" CommandId="{{.CommandId}}">
-      <rsp:Code>http://schemas.microsoft.com/wbem/wsman/1/windows/shell/signal/terminate</rsp:Code>
+      <rsp:Code>{{.Value}}</rsp:Code>
     </rsp:Signal>
   </s:Body>
 </s:Envelope>`
@@ -204,6 +204,7 @@ type Signal struct {
 	MessageId string
 	ShellId   string
 	CommandId string
+	Value     string
 }
 
 func (m *Signal) Xml() string {
