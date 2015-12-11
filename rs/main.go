@@ -134,11 +134,11 @@ func main() {
 			c <- os.Kill
 			return
 		}
-		for _, bs := range res.Stdout {
-			os.Stdout.Write(bs)
-		}
 		for _, bs := range res.Stderr {
 			os.Stderr.Write(bs)
+		}
+		for _, bs := range res.Stdout {
+			os.Stdout.Write(bs)
 		}
 		if res.IsDone() {
 			shell = nil
