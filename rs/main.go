@@ -10,6 +10,7 @@ import (
 	"net/url"
 	"os"
 	"os/signal"
+	"strconv"
 	"strings"
 	"unicode"
 
@@ -17,31 +18,96 @@ import (
 )
 
 var (
-	endpoint = flag.String("host", "127.0.0.1:5985", "")
-	user     = flag.String("user", "administrator", "")
-	pass     = flag.String("password", "", "")
+	endpoint = flag.String("host", "127.0.0.1:5985", "远程 windows 的地址")
+	user     = flag.String("user", "administrator", "远程 windows 的用户名")
+	pass     = flag.String("password", "", "远程 windows 的用户密码")
+	wget     = flag.String("wget", "wget.js", "下载工具 wget.js 的路径")
 )
 
-func escapeTo(s string, buf *bytes.Buffer) {
+func escape(s string, isqoute bool) string {
+	var buf bytes.Buffer
+	escapeTo(s, &buf, isqoute)
+	return buf.String()
+}
+
+func escapeTo(s string, buf *bytes.Buffer, isqoute bool) {
 	for _, c := range s {
-		if '"' == c {
-			buf.WriteString("\\\"")
-		} else if '"' == c {
-			buf.WriteString("\\\\")
-		} else {
+		switch c {
+		case '"':
+			if isqoute {
+				buf.WriteString("\\\"")
+			} else {
+				buf.WriteString("\"")
+			}
+		case '\\':
+			if isqoute {
+				buf.WriteString("\\\\")
+			} else {
+				buf.WriteString("\\")
+			}
+		case '%':
+			if isqoute {
+				buf.WriteString("%%")
+			} else {
+				buf.WriteString("%")
+			}
+		case '^':
+			if isqoute {
+				buf.WriteString("^")
+			} else {
+				buf.WriteString("^^")
+			}
+		case '>':
+			if isqoute {
+				buf.WriteString(">")
+			} else {
+				buf.WriteString("^>")
+			}
+		case '<':
+			if isqoute {
+				buf.WriteString("<")
+			} else {
+				buf.WriteString("^<")
+			}
+		case '|':
+			if isqoute {
+				buf.WriteString("|")
+			} else {
+				buf.WriteString("^|")
+			}
+		case '&':
+			if isqoute {
+				buf.WriteString("&")
+			} else {
+				buf.WriteString("^&")
+			}
+		// case '\'':
+		// 	buf.WriteString("^'")
+		// case '`':
+		// 	buf.WriteString("^`")
+		// case ';':
+		// 	buf.WriteString("^;")
+		// case '=':
+		// 	buf.WriteString("^=")
+		// case '(':
+		// 	buf.WriteString("^(")
+		// case ')':
+		// 	buf.WriteString("^)")
+		// case '!':
+		// 	buf.WriteString("^^!")
+		// case ',':
+		// 	buf.WriteString("^,")
+		// case '[':
+		// 	buf.WriteString("^[")
+		// case ']':
+		// 	buf.WriteString("^]")
+		default:
 			buf.WriteRune(c)
 		}
 	}
 }
 
-func main() {
-	flag.Parse()
-	if 0 == len(flag.Args()) {
-		fmt.Println("command is missing.")
-		os.Exit(-1)
-		return
-	}
-
+func NewShell() (*wsman.Shell, error) {
 	url_str := *endpoint
 	if u, e := url.Parse(url_str); nil != e || "" == u.Scheme {
 		if _, _, e = net.SplitHostPort(url_str); nil == e {
@@ -51,28 +117,22 @@ func main() {
 		}
 	}
 
-	shell, e := wsman.NewShell(url_str, *user, *pass)
-	if nil != e {
-		fmt.Println(e)
-		os.Exit(-1)
-		return
-	}
-	defer shell.Close()
+	return wsman.NewShell(url_str, *user, *pass)
+}
 
-	var cmd_str string
-
-	if 1 == len(flag.Args()) {
-		cmd_str = flag.Args()[0]
+func join(args []string) string {
+	if 1 == len(args) {
+		return args[0]
 	} else {
 		var buf bytes.Buffer
-		for idx, word := range flag.Args() {
+		for idx, word := range args {
 			if 0 != idx {
 				buf.WriteString(" ")
 			}
 
 			if strings.Contains(word, "\"") {
 				buf.WriteString("\"")
-				escapeTo(word, &buf)
+				escapeTo(word, &buf, true)
 				buf.WriteString("\"")
 			} else if p := strings.IndexFunc(word, unicode.IsSpace); p >= 0 {
 				buf.WriteString("\"")
@@ -83,13 +143,65 @@ func main() {
 			}
 		}
 
-		cmd_str = buf.String()
+		return buf.String()
+	}
+}
+
+func main() {
+	flag.Parse()
+	if 0 == len(flag.Args()) {
+		fmt.Println("command is missing.")
+		Exit(nil, -1)
+		return
 	}
 
-	cmd_id, e := shell.NewCommand(cmd_str)
+	args := flag.Args()
+	if 2 == len(args) {
+		if "[sendfile]" == args[0] {
+			Sendfile(args[1])
+			return
+		}
+	}
+	if len(args) >= 2 {
+		if "[exec]" == args[0] {
+			RemoteExec(args[1:])
+			return
+		}
+	}
+
+	if 1 == len(args) && "[enum]" == args[0] {
+		url_str := *endpoint
+		if u, e := url.Parse(url_str); nil != e || "" == u.Scheme {
+			if _, _, e = net.SplitHostPort(url_str); nil == e {
+				url_str = "http://" + url_str + "/wsman"
+			} else {
+				url_str = "http://" + url_str + ":5985/wsman"
+			}
+		}
+
+		enum := wsman.Enumerate(&wsman.Endpoint{url_str, *user, *pass},
+			"http://schemas.microsoft.com/wbem/wsman/1/windows/shell", "cmd", nil)
+		for enum.Next() {
+			fmt.Println(enum.Value)
+		}
+		if nil != enum.Err() {
+			fmt.Println(enum.Err())
+		}
+		return
+	}
+
+	shell, e := NewShell()
 	if nil != e {
 		fmt.Println(e)
-		os.Exit(-1)
+		Exit(shell, -1)
+		return
+	}
+	defer shell.Close()
+
+	cmd_id, e := shell.NewCommand(args[0], args[1:])
+	if nil != e {
+		fmt.Println(e)
+		Exit(shell, -1)
 		return
 	}
 
@@ -103,7 +215,7 @@ func main() {
 		}
 		if e := shell.Signal(cmd_id, wsman.SIGNAL_TERMINATE); nil != e {
 			fmt.Println(e)
-			os.Exit(-1)
+			Exit(shell, -1)
 			return
 		}
 	}()
@@ -128,8 +240,7 @@ func main() {
 		res, e := shell.Read(cmd_id)
 		if e != nil {
 			fmt.Println(e)
-			os.Exit(-1)
-
+			Exit(shell, -1)
 			shell = nil
 			c <- os.Kill
 			return
@@ -143,7 +254,25 @@ func main() {
 		if res.IsDone() {
 			shell = nil
 			c <- os.Kill
+
+			if res.ExitCode != "" && res.ExitCode != "0" {
+				fmt.Println(e)
+				code, e := strconv.ParseInt(res.ExitCode, 10, 0)
+				if nil != e {
+					code = -1
+				}
+				Exit(shell, int(code))
+				return
+			}
+
 			break
 		}
 	}
+}
+
+func Exit(shell *wsman.Shell, exitCode int) {
+	if nil != shell {
+		shell.Close()
+	}
+	os.Exit(exitCode)
 }

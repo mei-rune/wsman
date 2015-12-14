@@ -53,7 +53,6 @@ const DeleteShellTemplate = `<s:Envelope xmlns:s="` + NS_SOAP_ENV + `" xmlns:a="
     </a:ReplyTo>
     <w:MaxEnvelopeSize mustUnderstand="true">153600</w:MaxEnvelopeSize>
     <w:OperationTimeout>PT60S</w:OperationTimeout>
-
   </s:Header>
   <s:Body/>
 </s:Envelope>`
@@ -90,7 +89,8 @@ const CreateCommandTemplate = `<s:Envelope xmlns:s="` + NS_SOAP_ENV + `" xmlns:a
   </s:Header>
   <s:Body>
     <rsp:CommandLine>
-      <rsp:Command>{{.CommandText}}</rsp:Command>
+      <rsp:Command>{{.CommandText}}</rsp:Command>{{range $value := .Arguments}}
+      <rsp:Arguments>{{$value}}</rsp:Arguments>{{end}}
     </rsp:CommandLine>
   </s:Body>
 </s:Envelope>`
@@ -101,6 +101,7 @@ type CreateCommand struct {
 	MessageId   string
 	ShellId     string
 	CommandText string
+	Arguments   []string
 }
 
 func (m *CreateCommand) Xml() string {

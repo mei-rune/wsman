@@ -93,13 +93,13 @@ func NewShell(endpoint, user, pass string) (*Shell, error) {
 	return nil, errors.New("Envelope/Body/ResourceCreated or Envelope/Body/Shell isn't exists.")
 }
 
-func (s *Shell) NewCommand(cmd string) (string, error) {
+func (s *Shell) NewCommand(cmd string, arguments []string) (string, error) {
 	var buf = bytes.NewBuffer(make([]byte, 0, len(cmd)))
 	if e := xml.EscapeText(buf, []byte(cmd)); nil != e {
 		return "", e
 	}
 
-	env := &envelope.CreateCommand{Uuid(), s.Id, strings.Replace(buf.String(), "&#34;", "&quot;", -1)}
+	env := &envelope.CreateCommand{Uuid(), s.Id, strings.Replace(buf.String(), "&#34;", "&quot;", -1), arguments}
 	reader, err := s.Deliver(bytes.NewBufferString(env.Xml()))
 	if err != nil {
 		return "", err
