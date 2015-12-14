@@ -147,6 +147,14 @@ func join(args []string) string {
 	}
 }
 
+func fileExists(nm string) bool {
+	st, e := os.Stat(nm)
+	if nil != e {
+		return false
+	}
+	return !st.IsDir()
+}
+
 func main() {
 	flag.Parse()
 	if 0 == len(flag.Args()) {
@@ -164,6 +172,14 @@ func main() {
 	}
 	if len(args) >= 2 {
 		if "[exec]" == args[0] {
+			if "wget.js" == *wget {
+				for _, nm := range []string{*wget, "tools/wget.js", "../tools/wget.js", "../wget.js"} {
+					if fileExists(nm) {
+						flag.Set("wget", nm)
+						break
+					}
+				}
+			}
 			RemoteExec(args[1:])
 			return
 		}

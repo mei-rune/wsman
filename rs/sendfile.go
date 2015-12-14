@@ -100,7 +100,7 @@ func sendfile(shell *wsman.Shell, file string) (string, error) {
 	}
 	reader := bufio.NewReader(f)
 
-	fmt.Println("send '" + filename + "' in the process")
+	fmt.Println("send batch file in the process")
 	defer fmt.Println()
 
 	if_first := true
@@ -153,11 +153,15 @@ func execCmd(shell *wsman.Shell, cmd string, out, err io.Writer) error {
 			}
 			return e
 		}
-		for _, bs := range res.Stderr {
-			err.Write(bs)
+		if nil != err {
+			for _, bs := range res.Stderr {
+				err.Write(bs)
+			}
 		}
-		for _, bs := range res.Stdout {
-			out.Write(bs)
+		if nil != out {
+			for _, bs := range res.Stdout {
+				out.Write(bs)
+			}
 		}
 		if res.IsDone() {
 			if e := shell.Signal(cmd_id, wsman.SIGNAL_TERMINATE); nil != e {

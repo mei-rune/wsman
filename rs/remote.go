@@ -91,7 +91,7 @@ func sendfileIfNeed(shell *wsman.Shell, file string) (string, error) {
 		}
 	}
 
-	if e := execCmd(shell, "cscript //nologo //e:jscript "+rget+" "+file+" "+rname, os.Stdout, os.Stderr); nil != e {
+	if e := execCmd(shell, "cscript //nologo //e:jscript "+rget+" "+file+" "+rname, nil, nil); nil != e {
 		return "", e
 	}
 
