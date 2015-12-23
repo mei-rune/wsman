@@ -18,7 +18,7 @@ const CreateShellTemplate = `<s:Envelope xmlns:s="` + NS_SOAP_ENV + `" xmlns:a="
     <a:Action mustUnderstand="true">http://schemas.xmlsoap.org/ws/2004/09/transfer/Create</a:Action>
     <w:OptionSet>
       <w:Option Name="WINRS_NOPROFILE">FALSE</w:Option>
-      <w:Option Name="WINRS_CODEPAGE">437</w:Option>
+      <w:Option Name="WINRS_CODEPAGE">{{.CodePage}}</w:Option>
     </w:OptionSet>
   </s:Header>
   <s:Body>
@@ -32,6 +32,7 @@ const CreateShellTemplate = `<s:Envelope xmlns:s="` + NS_SOAP_ENV + `" xmlns:a="
 var create_shell_template = template.Must(template.New("CreateShell").Parse(CreateShellTemplate))
 
 type CreateShell struct {
+	CodePage  string
 	MessageId string
 }
 

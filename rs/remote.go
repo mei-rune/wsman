@@ -1,87 +1,153 @@
-package main
+package rs
 
 import (
+	"bytes"
 	"errors"
-	"fmt"
 	"net/url"
 	"os"
-	"os/signal"
 	"path/filepath"
+	"strings"
+	"unicode"
 
 	"github.com/runner-mei/wsman"
 )
 
-// var (
-// 	endpoint = flag.String("host", "127.0.0.1:5985", "")
-// 	user     = flag.String("user", "administrator", "")
-// 	pass     = flag.String("password", "", "")
-// )
+var WgetFile string = "wget.js"
 
-func RemoteExec(args []string) {
-	// 	flag.Parse()
-	// 	if 0 == len(flag.Args()) {
-	// 		fmt.Println("file is missing.")
-	// 		Exit(shell, -1)	// 		return
-	// 	}
+func Escape(s string, isqoute bool) string {
+	var buf bytes.Buffer
+	EscapeTo(s, &buf, isqoute)
+	return buf.String()
+}
 
-	// 	if 1 != len(flag.Args()) {
-	// 		fmt.Println("arguments is to much.")
-	// 		Exit(shell, -1)	// 		return
-	// 	}
-	// 	file := flag.Args()[0]
-
-	shell, e := NewShell()
-	if nil != e {
-		fmt.Println(e)
-		Exit(shell, -1)
-		return
-	}
-	defer shell.Close()
-
-	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt, os.Kill)
-	go func() {
-		<-c
-		// if nil == shell {
-		// 	return
-		// }
-		// if e := shell.Signal(cmd_id, wsman.SIGNAL_TERMINATE); nil != e {
-		// 	fmt.Println(e)
-		// 	Exit(shell, -1)		// 	return
-		// }
-
-		Exit(shell, -1)
-	}()
-
-	rname, e := sendfileIfNeed(shell, args[0])
-	if nil != e {
-		fmt.Println(e)
-		Exit(shell, -1)
-		return
-	}
-
-	if e := execCmd(shell, rname+" "+join(args[1:]), os.Stdout, os.Stderr); nil != e {
-		fmt.Println(e)
-		Exit(shell, -1)
-		return
+func EscapeTo(s string, buf *bytes.Buffer, isqoute bool) {
+	for _, c := range s {
+		switch c {
+		case '"':
+			if isqoute {
+				buf.WriteString("\\\"")
+			} else {
+				buf.WriteString("\"")
+			}
+		case '\\':
+			if isqoute {
+				buf.WriteString("\\\\")
+			} else {
+				buf.WriteString("\\")
+			}
+		case '%':
+			if isqoute {
+				buf.WriteString("%%")
+			} else {
+				buf.WriteString("%")
+			}
+		case '^':
+			if isqoute {
+				buf.WriteString("^")
+			} else {
+				buf.WriteString("^^")
+			}
+		case '>':
+			if isqoute {
+				buf.WriteString(">")
+			} else {
+				buf.WriteString("^>")
+			}
+		case '<':
+			if isqoute {
+				buf.WriteString("<")
+			} else {
+				buf.WriteString("^<")
+			}
+		case '|':
+			if isqoute {
+				buf.WriteString("|")
+			} else {
+				buf.WriteString("^|")
+			}
+		case '&':
+			if isqoute {
+				buf.WriteString("&")
+			} else {
+				buf.WriteString("^&")
+			}
+		// case '\'':
+		// 	buf.WriteString("^'")
+		// case '`':
+		// 	buf.WriteString("^`")
+		// case ';':
+		// 	buf.WriteString("^;")
+		// case '=':
+		// 	buf.WriteString("^=")
+		// case '(':
+		// 	buf.WriteString("^(")
+		// case ')':
+		// 	buf.WriteString("^)")
+		// case '!':
+		// 	buf.WriteString("^^!")
+		// case ',':
+		// 	buf.WriteString("^,")
+		// case '[':
+		// 	buf.WriteString("^[")
+		// case ']':
+		// 	buf.WriteString("^]")
+		default:
+			buf.WriteRune(c)
+		}
 	}
 }
 
-func sendfileIfNeed(shell *wsman.Shell, file string) (string, error) {
+func Join(args []string) string {
+	if 1 == len(args) {
+		return args[0]
+	} else {
+		var buf bytes.Buffer
+		for idx, word := range args {
+			if 0 != idx {
+				buf.WriteString(" ")
+			}
+
+			if strings.Contains(word, "\"") {
+				buf.WriteString("\"")
+				EscapeTo(word, &buf, true)
+				buf.WriteString("\"")
+			} else if p := strings.IndexFunc(word, unicode.IsSpace); p >= 0 {
+				buf.WriteString("\"")
+				buf.WriteString(word)
+				buf.WriteString("\"")
+			} else {
+				buf.WriteString(word)
+			}
+		}
+
+		return buf.String()
+	}
+}
+
+func FileExists(nm string) bool {
+	st, e := os.Stat(nm)
+	if nil != e {
+		return false
+	}
+	return !st.IsDir()
+}
+
+func RemoteExec(shell *wsman.Shell, cmd string, args []string) error {
+	rname, e := SendfileIfNeed(shell, cmd)
+	if nil != e {
+		return e
+	}
+
+	if e := ExecCmd(shell, rname+" "+Join(args), os.Stdout, os.Stderr); nil != e {
+		return e
+	}
+	return nil
+}
+
+func SendfileIfNeed(shell *wsman.Shell, file string) (string, error) {
 	u, e := url.Parse(file)
 	if nil != e || "" == u.Scheme {
-		return sendfile(shell, file)
-	}
-
-	if st, e := os.Stat(*wget); nil != e {
-		return "", e
-	} else if st.IsDir() {
-		return "", errors.New("'" + *wget + "' is directory.")
-	}
-
-	rget, e := sendfile(shell, *wget)
-	if nil != e {
-		return "", errors.New("'" + *wget + "' send failed, " + e.Error())
+		return Sendfile(shell, file)
 	}
 
 	rname := filepath.Join("tpt_scripts", u.Path)
@@ -91,7 +157,22 @@ func sendfileIfNeed(shell *wsman.Shell, file string) (string, error) {
 		}
 	}
 
-	if e := execCmd(shell, "cscript //nologo //e:jscript "+rget+" "+file+" "+rname, nil, nil); nil != e {
+	if e := ExecCmd(shell, "cscript //nologo //e:jscript tpt_scripts\\"+WgetFile+" "+file+" "+rname, nil, nil); nil == e {
+		return rname, nil
+	}
+
+	if st, e := os.Stat(WgetFile); nil != e {
+		return "", e
+	} else if st.IsDir() {
+		return "", errors.New("'" + WgetFile + "' is directory.")
+	}
+
+	rget, e := Sendfile(shell, WgetFile)
+	if nil != e {
+		return "", errors.New("'" + WgetFile + "' send failed, " + e.Error())
+	}
+
+	if e := ExecCmd(shell, "cscript //nologo //e:jscript "+rget+" "+file+" "+rname, nil, nil); nil != e {
 		return "", e
 	}
 

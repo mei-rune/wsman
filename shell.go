@@ -16,8 +16,11 @@ type Shell struct {
 	Id string
 }
 
-func NewShell(endpoint, user, pass string) (*Shell, error) {
-	env := &envelope.CreateShell{Uuid()}
+func NewShell(endpoint, user, pass, code_page string) (*Shell, error) {
+	if "" == code_page {
+		code_page = "936"
+	}
+	env := &envelope.CreateShell{code_page, Uuid()}
 	ep := &Endpoint{Url: endpoint, User: user, Password: pass}
 
 	reader, err := ep.Deliver(bytes.NewBufferString(env.Xml()))

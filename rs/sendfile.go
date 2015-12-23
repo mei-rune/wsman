@@ -1,4 +1,4 @@
-package main
+package rs
 
 import (
 	"bufio"
@@ -7,64 +7,15 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"os/signal"
 	"path/filepath"
 	"strings"
 
 	"github.com/runner-mei/wsman"
 )
 
-// var (
-// 	endpoint = flag.String("host", "127.0.0.1:5985", "")
-// 	user     = flag.String("user", "administrator", "")
-// 	pass     = flag.String("password", "", "")
-// )
-
-func Sendfile(file string) {
-	// 	flag.Parse()
-	// 	if 0 == len(flag.Args()) {
-	// 		fmt.Println("file is missing.")
-	// 		Exit(shell, -1)	// 		return
-	// 	}
-
-	// 	if 1 != len(flag.Args()) {
-	// 		fmt.Println("arguments is to much.")
-	// 		Exit(shell, -1)	// 		return
-	// 	}
-	// 	file := flag.Args()[0]
-
-	shell, e := NewShell()
-	if nil != e {
-		fmt.Println(e)
-		Exit(shell, -1)
-		return
-	}
-	defer shell.Close()
-
-	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt, os.Kill)
-	go func() {
-		<-c
-		// if nil == shell {
-		// 	return
-		// }
-		// if e := shell.Signal(cmd_id, wsman.SIGNAL_TERMINATE); nil != e {
-		// 	fmt.Println(e)
-		// 	Exit(shell, -1)		// 	return
-		// }
-
-		Exit(shell, -1)
-	}()
-	if _, e := sendfile(shell, file); nil != e {
-		fmt.Println(e)
-		Exit(shell, -1)
-		return
-	}
-}
-
 func mkdir(shell *wsman.Shell, dir string) error {
 	// fmt.Println("mkdir", dir)
-	return execCmd(shell, "cmd /c \"if not exist "+dir+" mkdir "+dir+"\"", os.Stdout, os.Stderr)
+	return ExecCmd(shell, "cmd /c \"if not exist "+dir+" mkdir "+dir+"\"", os.Stdout, os.Stderr)
 }
 
 func mkalldir(shell *wsman.Shell, root, dir string) error {
@@ -82,8 +33,8 @@ func mkalldir(shell *wsman.Shell, root, dir string) error {
 	return nil
 }
 
-func sendfile(shell *wsman.Shell, file string) (string, error) {
-	if e := execCmd(shell, "cmd /c \"if not exist tpt_scripts mkdir tpt_scripts\"", os.Stdout, os.Stderr); nil != e {
+func Sendfile(shell *wsman.Shell, file string) (string, error) {
+	if e := ExecCmd(shell, "cmd /c \"if not exist tpt_scripts mkdir tpt_scripts\"", os.Stdout, os.Stderr); nil != e {
 		return "", errors.New("failed to create tpt_scripts, " + e.Error())
 	}
 
@@ -124,13 +75,13 @@ func sendfile(shell *wsman.Shell, file string) (string, error) {
 		} else {
 			if if_first {
 				if_first = false
-				cmd_str = "echo " + escape(string(bs), false) + " >" + filename
+				cmd_str = "echo " + Escape(string(bs), false) + " >" + filename
 			} else {
-				cmd_str = "echo " + escape(string(bs), false) + " >>" + filename
+				cmd_str = "echo " + Escape(string(bs), false) + " >>" + filename
 			}
 		}
 
-		if e := execCmd(shell, cmd_str, os.Stdout, os.Stderr); nil != e {
+		if e := ExecCmd(shell, cmd_str, os.Stdout, os.Stderr); nil != e {
 			return "", e
 		}
 
@@ -139,14 +90,16 @@ func sendfile(shell *wsman.Shell, file string) (string, error) {
 	return filename, nil
 }
 
-func execCmd(shell *wsman.Shell, cmd string, out, err io.Writer) error {
+func ExecCmd(shell *wsman.Shell, cmd string, out, err io.Writer) error {
 	cmd_id, e := shell.NewCommand(cmd, nil)
 	if nil != e {
 		return e
 	}
 	defer func() {
 		if e := shell.Signal(cmd_id, wsman.SIGNAL_TERMINATE); nil != e {
-			fmt.Println("[error]", e)
+			if !strings.Contains(e.Error(), "The parameter is incorrect.") {
+				fmt.Println("[error] terminate", e)
+			}
 		}
 	}()
 
@@ -166,9 +119,6 @@ func execCmd(shell *wsman.Shell, cmd string, out, err io.Writer) error {
 			}
 		}
 		if res.IsDone() {
-			if e := shell.Signal(cmd_id, wsman.SIGNAL_TERMINATE); nil != e {
-				fmt.Println("[error]", e)
-			}
 			if res.ExitCode != "" && res.ExitCode != "0" {
 				return errors.New("exit with " + res.ExitCode)
 			}

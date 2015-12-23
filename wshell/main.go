@@ -2,7 +2,6 @@ package main
 
 import (
 	"bufio"
-	"bytes"
 	"flag"
 	"fmt"
 	"net"
@@ -11,101 +10,16 @@ import (
 	"os"
 	"os/signal"
 	"strconv"
-	"strings"
-	"unicode"
 
 	"github.com/runner-mei/wsman"
+	"github.com/runner-mei/wsman/rs"
 )
 
 var (
 	endpoint = flag.String("host", "127.0.0.1:5985", "远程 windows 的地址")
 	user     = flag.String("user", "administrator", "远程 windows 的用户名")
 	pass     = flag.String("password", "", "远程 windows 的用户密码")
-	wget     = flag.String("wget", "wget.js", "下载工具 wget.js 的路径")
 )
-
-func escape(s string, isqoute bool) string {
-	var buf bytes.Buffer
-	escapeTo(s, &buf, isqoute)
-	return buf.String()
-}
-
-func escapeTo(s string, buf *bytes.Buffer, isqoute bool) {
-	for _, c := range s {
-		switch c {
-		case '"':
-			if isqoute {
-				buf.WriteString("\\\"")
-			} else {
-				buf.WriteString("\"")
-			}
-		case '\\':
-			if isqoute {
-				buf.WriteString("\\\\")
-			} else {
-				buf.WriteString("\\")
-			}
-		case '%':
-			if isqoute {
-				buf.WriteString("%%")
-			} else {
-				buf.WriteString("%")
-			}
-		case '^':
-			if isqoute {
-				buf.WriteString("^")
-			} else {
-				buf.WriteString("^^")
-			}
-		case '>':
-			if isqoute {
-				buf.WriteString(">")
-			} else {
-				buf.WriteString("^>")
-			}
-		case '<':
-			if isqoute {
-				buf.WriteString("<")
-			} else {
-				buf.WriteString("^<")
-			}
-		case '|':
-			if isqoute {
-				buf.WriteString("|")
-			} else {
-				buf.WriteString("^|")
-			}
-		case '&':
-			if isqoute {
-				buf.WriteString("&")
-			} else {
-				buf.WriteString("^&")
-			}
-		// case '\'':
-		// 	buf.WriteString("^'")
-		// case '`':
-		// 	buf.WriteString("^`")
-		// case ';':
-		// 	buf.WriteString("^;")
-		// case '=':
-		// 	buf.WriteString("^=")
-		// case '(':
-		// 	buf.WriteString("^(")
-		// case ')':
-		// 	buf.WriteString("^)")
-		// case '!':
-		// 	buf.WriteString("^^!")
-		// case ',':
-		// 	buf.WriteString("^,")
-		// case '[':
-		// 	buf.WriteString("^[")
-		// case ']':
-		// 	buf.WriteString("^]")
-		default:
-			buf.WriteRune(c)
-		}
-	}
-}
 
 func NewShell() (*wsman.Shell, error) {
 	url_str := *endpoint
@@ -117,45 +31,12 @@ func NewShell() (*wsman.Shell, error) {
 		}
 	}
 
-	return wsman.NewShell(url_str, *user, *pass)
-}
-
-func join(args []string) string {
-	if 1 == len(args) {
-		return args[0]
-	} else {
-		var buf bytes.Buffer
-		for idx, word := range args {
-			if 0 != idx {
-				buf.WriteString(" ")
-			}
-
-			if strings.Contains(word, "\"") {
-				buf.WriteString("\"")
-				escapeTo(word, &buf, true)
-				buf.WriteString("\"")
-			} else if p := strings.IndexFunc(word, unicode.IsSpace); p >= 0 {
-				buf.WriteString("\"")
-				buf.WriteString(word)
-				buf.WriteString("\"")
-			} else {
-				buf.WriteString(word)
-			}
-		}
-
-		return buf.String()
-	}
-}
-
-func fileExists(nm string) bool {
-	st, e := os.Stat(nm)
-	if nil != e {
-		return false
-	}
-	return !st.IsDir()
+	return wsman.NewShell(url_str, *user, *pass, "")
 }
 
 func main() {
+	flag.StringVar(&rs.WgetFile, "wget", "wget.js", "下载工具 wget.js 的路径")
+
 	flag.Parse()
 	if 0 == len(flag.Args()) {
 		fmt.Println("command is missing.")
@@ -166,21 +47,21 @@ func main() {
 	args := flag.Args()
 	if 2 == len(args) {
 		if "[sendfile]" == args[0] {
-			Sendfile(args[1])
+			sendfile(args[1])
 			return
 		}
 	}
 	if len(args) >= 2 {
 		if "[exec]" == args[0] {
-			if "wget.js" == *wget {
-				for _, nm := range []string{*wget, "tools/wget.js", "../tools/wget.js", "../wget.js"} {
-					if fileExists(nm) {
+			if "wget.js" == rs.WgetFile {
+				for _, nm := range []string{rs.WgetFile, "tools/wget.js", "../tools/wget.js", "../wget.js"} {
+					if rs.FileExists(nm) {
 						flag.Set("wget", nm)
 						break
 					}
 				}
 			}
-			RemoteExec(args[1:])
+			remoteExec(args[1:])
 			return
 		}
 	}
@@ -302,4 +183,70 @@ func Exit(shell *wsman.Shell, exitCode int) {
 		shell.Close()
 	}
 	os.Exit(exitCode)
+}
+
+func remoteExec(args []string) {
+	shell, e := NewShell()
+	if nil != e {
+		fmt.Println(e)
+		Exit(shell, -1)
+		return
+	}
+	defer shell.Close()
+
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt, os.Kill)
+	go func() {
+		<-c
+		Exit(shell, -1)
+	}()
+
+	e = rs.RemoteExec(shell, args[0], args[1:])
+	if nil != e {
+		fmt.Println(e)
+		Exit(shell, -1)
+		return
+	}
+}
+
+func sendfile(file string) {
+	// 	flag.Parse()
+	// 	if 0 == len(flag.Args()) {
+	// 		fmt.Println("file is missing.")
+	// 		Exit(shell, -1)	// 		return
+	// 	}
+
+	// 	if 1 != len(flag.Args()) {
+	// 		fmt.Println("arguments is to much.")
+	// 		Exit(shell, -1)	// 		return
+	// 	}
+	// 	file := flag.Args()[0]
+
+	shell, e := NewShell()
+	if nil != e {
+		fmt.Println(e)
+		Exit(shell, -1)
+		return
+	}
+	defer shell.Close()
+
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt, os.Kill)
+	go func() {
+		<-c
+		// if nil == shell {
+		// 	return
+		// }
+		// if e := shell.Signal(cmd_id, wsman.SIGNAL_TERMINATE); nil != e {
+		// 	fmt.Println(e)
+		// 	Exit(shell, -1)		// 	return
+		// }
+
+		Exit(shell, -1)
+	}()
+	if _, e := rs.Sendfile(shell, file); nil != e {
+		fmt.Println(e)
+		Exit(shell, -1)
+		return
+	}
 }
