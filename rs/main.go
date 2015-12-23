@@ -221,6 +221,16 @@ func main() {
 		return
 	}
 
+	is_terminate := false
+	defer func() {
+		if is_terminate {
+			return
+		}
+		if e := shell.Signal(cmd_id, wsman.SIGNAL_TERMINATE); nil != e {
+			fmt.Println("[error]", e)
+		}
+	}()
+
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt, os.Kill)
 
@@ -234,6 +244,7 @@ func main() {
 			Exit(shell, -1)
 			return
 		}
+		is_terminate = true
 	}()
 
 	go func() {
@@ -272,7 +283,7 @@ func main() {
 			c <- os.Kill
 
 			if res.ExitCode != "" && res.ExitCode != "0" {
-				fmt.Println(e)
+				fmt.Println("exit code is", res.ExitCode)
 				code, e := strconv.ParseInt(res.ExitCode, 10, 0)
 				if nil != e {
 					code = -1

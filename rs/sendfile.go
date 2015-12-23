@@ -144,13 +144,15 @@ func execCmd(shell *wsman.Shell, cmd string, out, err io.Writer) error {
 	if nil != e {
 		return e
 	}
+	defer func() {
+		if e := shell.Signal(cmd_id, wsman.SIGNAL_TERMINATE); nil != e {
+			fmt.Println("[error]", e)
+		}
+	}()
 
 	for {
 		res, e := shell.Read(cmd_id)
 		if e != nil {
-			if e := shell.Signal(cmd_id, wsman.SIGNAL_TERMINATE); nil != e {
-				fmt.Println("[error]", e)
-			}
 			return e
 		}
 		if nil != err {
