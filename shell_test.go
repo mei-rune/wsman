@@ -31,7 +31,7 @@ func Test_creating_a_shell(t *testing.T) {
 	}))
 	defer hsrv.Close()
 
-	s, err := NewShell(hsrv.URL, "vagrant", "vagrant")
+	s, err := NewShell(hsrv.URL, "vagrant", "vagrant", "")
 
 	if err != nil {
 		t.Fatalf("err: %s", err)
@@ -65,7 +65,7 @@ func Test_creating_a_shell2(t *testing.T) {
 	}))
 	defer hsrv.Close()
 
-	s, err := NewShell(hsrv.URL, "vagrant", "vagrant")
+	s, err := NewShell(hsrv.URL, "vagrant", "vagrant", "")
 
 	if err != nil {
 		t.Fatalf("err: %s", err)
@@ -116,7 +116,7 @@ func Test_creating_a_shell_command(t *testing.T) {
 		Endpoint: &Endpoint{Url: hsrv.URL},
 	}
 
-	cmd_id, err := s.NewCommand("foo bar")
+	cmd_id, err := s.NewCommand("foo bar", nil)
 	if err != nil {
 		t.Fatalf("err: %s", err)
 	}
@@ -168,7 +168,7 @@ func Test_authentication_failure(t *testing.T) {
 	}))
 	defer hsrv.Close()
 
-	_, err := NewShell(hsrv.URL, "", "")
+	_, err := NewShell(hsrv.URL, "", "", "")
 
 	if err == nil {
 		t.Fatal("bad: no error")
