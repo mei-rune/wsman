@@ -93,7 +93,12 @@ func main() {
 		Exit(shell, -1)
 		return
 	}
-	defer shell.Close()
+	defer func() {
+		if nil == shell {
+			return
+		}
+		shell.Close()
+	}()
 
 	cmd_id, e := shell.NewCommand(args[0], args[1:])
 	if nil != e {
@@ -150,8 +155,6 @@ func main() {
 		if e != nil {
 			fmt.Println(e)
 			Exit(shell, -1)
-			shell = nil
-			c <- os.Kill
 			return
 		}
 		for _, bs := range res.Stderr {
@@ -161,9 +164,6 @@ func main() {
 			os.Stdout.Write(bs)
 		}
 		if res.IsDone() {
-			shell = nil
-			c <- os.Kill
-
 			if res.ExitCode != "" && res.ExitCode != "0" {
 				fmt.Println("exit code is", res.ExitCode)
 				code, e := strconv.ParseInt(res.ExitCode, 10, 0)
