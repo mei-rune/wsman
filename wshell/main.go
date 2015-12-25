@@ -103,29 +103,30 @@ func main() {
 	}
 
 	is_terminate := false
-	defer func() {
+	var terminate = func() {
 		if is_terminate {
 			return
 		}
+
+		if nil == shell {
+			return
+		}
+
 		if e := shell.Signal(cmd_id, wsman.SIGNAL_TERMINATE); nil != e {
 			fmt.Println("[error]", e)
 		}
-	}()
+		shell = nil
+		is_terminate = true
+	}
+
+	defer terminate()
 
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt, os.Kill)
 
 	go func() {
 		<-c
-		if nil == shell {
-			return
-		}
-		if e := shell.Signal(cmd_id, wsman.SIGNAL_TERMINATE); nil != e {
-			fmt.Println(e)
-			Exit(shell, -1)
-			return
-		}
-		is_terminate = true
+		terminate()
 	}()
 
 	go func() {
