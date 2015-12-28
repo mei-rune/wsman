@@ -9,7 +9,7 @@ import (
 )
 
 var (
-	win_url      = flag.String("win_url", "http://127.0.0.1:3907/wsman", "")
+	win_url      = flag.String("win_url", "http://127.0.0.1:5985/wsman", "")
 	win_user     = flag.String("win_user", "meifakun", "")
 	win_password = flag.String("win_password", "mfk", "")
 )

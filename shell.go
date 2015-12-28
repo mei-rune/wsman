@@ -16,8 +16,11 @@ type Shell struct {
 	Id string
 }
 
-func NewShell(endpoint, user, pass string) (*Shell, error) {
-	env := &envelope.CreateShell{Uuid()}
+func NewShell(endpoint, user, pass, code_page string) (*Shell, error) {
+	if "" == code_page {
+		code_page = "936"
+	}
+	env := &envelope.CreateShell{code_page, Uuid()}
 	ep := &Endpoint{Url: endpoint, User: user, Password: pass}
 
 	reader, err := ep.Deliver(bytes.NewBufferString(env.Xml()))
@@ -93,8 +96,13 @@ func NewShell(endpoint, user, pass string) (*Shell, error) {
 	return nil, errors.New("Envelope/Body/ResourceCreated or Envelope/Body/Shell isn't exists.")
 }
 
-func (s *Shell) NewCommand(cmd string) (string, error) {
-	env := &envelope.CreateCommand{Uuid(), s.Id, cmd}
+func (s *Shell) NewCommand(cmd string, arguments []string) (string, error) {
+	var buf = bytes.NewBuffer(make([]byte, 0, len(cmd)))
+	if e := xml.EscapeText(buf, []byte(cmd)); nil != e {
+		return "", e
+	}
+
+	env := &envelope.CreateCommand{Uuid(), s.Id, strings.Replace(buf.String(), "&#34;", "&quot;", -1), arguments}
 	reader, err := s.Deliver(bytes.NewBufferString(env.Xml()))
 	if err != nil {
 		return "", err
@@ -131,6 +139,7 @@ type CommandResult struct {
 }
 
 func (c *CommandResult) IsDone() bool {
+	// https://msdn.microsoft.com/en-us/library/cc761137.aspx
 	// http://schemas.microsoft.com/wbem/wsman/1/windows/shell/CommandState/Running
 	return "http://schemas.microsoft.com/wbem/wsman/1/windows/shell/CommandState/Done" == c.State
 }
@@ -276,8 +285,15 @@ func (s *Shell) Send(cmd_id, txt string) error {
 	return nil
 }
 
-func (s *Shell) Signal(cmd_id string) error {
-	env := &envelope.Signal{Uuid(), s.Id, cmd_id}
+// https://msdn.microsoft.com/en-us/library/cc761132.aspx
+const (
+	SIGNAL_TERMINATE  = "http://schemas.microsoft.com/wbem/wsman/1/windows/shell/signal/terminate"
+	SIGNAL_CTRL_C     = "http://schemas.microsoft.com/wbem/wsman/1/windows/shell/signal/ctrl_c"
+	SIGNAL_CTRL_BREAK = "http://schemas.microsoft.com/wbem/wsman/1/windows/shell/signal/ctrl_break"
+)
+
+func (s *Shell) Signal(cmd_id, signal string) error {
+	env := &envelope.Signal{Uuid(), s.Id, cmd_id, signal}
 	reader, err := s.Deliver(bytes.NewBufferString(env.Xml()))
 	if err != nil {
 		return err

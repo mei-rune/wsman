@@ -18,7 +18,7 @@ const CreateShellTemplate = `<s:Envelope xmlns:s="` + NS_SOAP_ENV + `" xmlns:a="
     <a:Action mustUnderstand="true">http://schemas.xmlsoap.org/ws/2004/09/transfer/Create</a:Action>
     <w:OptionSet>
       <w:Option Name="WINRS_NOPROFILE">FALSE</w:Option>
-      <w:Option Name="WINRS_CODEPAGE">437</w:Option>
+      <w:Option Name="WINRS_CODEPAGE">{{.CodePage}}</w:Option>
     </w:OptionSet>
   </s:Header>
   <s:Body>
@@ -32,6 +32,7 @@ const CreateShellTemplate = `<s:Envelope xmlns:s="` + NS_SOAP_ENV + `" xmlns:a="
 var create_shell_template = template.Must(template.New("CreateShell").Parse(CreateShellTemplate))
 
 type CreateShell struct {
+	CodePage  string
 	MessageId string
 }
 
@@ -53,7 +54,6 @@ const DeleteShellTemplate = `<s:Envelope xmlns:s="` + NS_SOAP_ENV + `" xmlns:a="
     </a:ReplyTo>
     <w:MaxEnvelopeSize mustUnderstand="true">153600</w:MaxEnvelopeSize>
     <w:OperationTimeout>PT60S</w:OperationTimeout>
-
   </s:Header>
   <s:Body/>
 </s:Envelope>`
@@ -90,7 +90,8 @@ const CreateCommandTemplate = `<s:Envelope xmlns:s="` + NS_SOAP_ENV + `" xmlns:a
   </s:Header>
   <s:Body>
     <rsp:CommandLine>
-      <rsp:Command>{{.CommandText}}</rsp:Command>
+      <rsp:Command>{{.CommandText}}</rsp:Command>{{range $value := .Arguments}}
+      <rsp:Arguments>{{$value}}</rsp:Arguments>{{end}}
     </rsp:CommandLine>
   </s:Body>
 </s:Envelope>`
@@ -101,6 +102,7 @@ type CreateCommand struct {
 	MessageId   string
 	ShellId     string
 	CommandText string
+	Arguments   []string
 }
 
 func (m *CreateCommand) Xml() string {
@@ -193,7 +195,7 @@ const SignalTemplate = `<s:Envelope xmlns:s="` + NS_SOAP_ENV + `" xmlns:a="` + N
   </s:Header>
   <s:Body>
     <rsp:Signal xmlns:rsp="http://schemas.microsoft.com/wbem/wsman/1/windows/shell" CommandId="{{.CommandId}}">
-      <rsp:Code>http://schemas.microsoft.com/wbem/wsman/1/windows/shell/signal/terminate</rsp:Code>
+      <rsp:Code>{{.Value}}</rsp:Code>
     </rsp:Signal>
   </s:Body>
 </s:Envelope>`
@@ -204,6 +206,7 @@ type Signal struct {
 	MessageId string
 	ShellId   string
 	CommandId string
+	Value     string
 }
 
 func (m *Signal) Xml() string {
@@ -224,11 +227,14 @@ const EnumerateTemplate = `<s:Envelope xmlns:s="` + NS_SOAP_ENV + `" xmlns:a="` 
     </a:ReplyTo>
     <w:MaxEnvelopeSize s:mustUnderstand="true">153600</w:MaxEnvelopeSize>
     <w:OperationTimeout>PT60S</w:OperationTimeout>
-  </s:Header>
+    {{if .OptionSet}}<w:OptionSet>
+      {{range $key, $value := .OptionSet}}<w:Option Name="{{$key}}">{{$value}}</w:Option>{{end}}
+    </w:OptionSet>
+  {{end}}</s:Header>
   <s:Body>
     <n:Enumerate>
       <w:OptimizeEnumeration/>
-      <w:MaxElements>32000</w:MaxElements>
+      <w:MaxElements>200</w:MaxElements>
     </n:Enumerate>
   </s:Body>
 </s:Envelope>`
@@ -240,6 +246,7 @@ type Enumerate struct {
 	MessageId   string
 	Name        string
 	SelectorSet map[string]string
+	OptionSet   map[string]string
 }
 
 func (m *Enumerate) Xml() string {
@@ -259,8 +266,11 @@ const PullTemplate = `<s:Envelope xmlns:s="` + NS_SOAP_ENV + `" xmlns:a="` + NS_
     </a:ReplyTo>
     <w:MaxEnvelopeSize s:mustUnderstand="true">153600</w:MaxEnvelopeSize>
     <a:MessageID>uuid:{{.MessageId}}</a:MessageID>
-    <w:OperationTimeout>PT60S</w:OperationTimeout>
-  </s:Header>
+    <w:OperationTimeout>{{if eq .Timeout 0}}PT60S{{else}}PT{{.Timeout}}S{{end}}</w:OperationTimeout>
+    {{if .OptionSet}}<w:OptionSet>
+      {{range $key, $value := .OptionSet}}<w:Option Name="{{$key}}">{{$value}}</w:Option>{{end}}
+    </w:OptionSet>
+  {{end}}</s:Header>
   <s:Body>
     <n:Pull>
       <n:EnumerationContext>{{.Context}}</n:EnumerationContext>
@@ -277,6 +287,8 @@ type Pull struct {
 	Name        string
 	SelectorSet map[string]string
 	Context     string
+	Timeout     uint
+	OptionSet   map[string]string
 }
 
 func (m *Pull) Xml() string {
@@ -297,7 +309,10 @@ const GetTemplate = `<s:Envelope xmlns:s="` + NS_SOAP_ENV + `" xmlns:a="` + NS_A
     <w:MaxEnvelopeSize s:mustUnderstand="true">153600</w:MaxEnvelopeSize>
     <a:MessageID>uuid:{{.MessageId}}</a:MessageID>
     <w:OperationTimeout>PT60S</w:OperationTimeout>
-  </s:Header>
+    {{if .OptionSet}}<w:OptionSet xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+      {{range $key, $value := .OptionSet}}<w:Option Name="{{$key}}">{{$value}}</w:Option>{{end}}
+    </w:OptionSet>
+  {{end}}</s:Header>
   <s:Body/>
 </s:Envelope>
 `
@@ -309,6 +324,7 @@ type Get struct {
 	MessageId   string
 	Name        string
 	SelectorSet map[string]string
+	OptionSet   map[string]string
 }
 
 func (m *Get) Xml() string {
@@ -338,6 +354,11 @@ const SubscribeTemplate = `<s:Envelope xmlns:s="` + NS_SOAP_ENV + `" xmlns:a="` 
     <w:MaxEnvelopeSize s:mustUnderstand="true">153600</w:MaxEnvelopeSize>
     <a:MessageID>uuid:{{.MessageId}}</a:MessageID>
     <w:OperationTimeout>PT60S</w:OperationTimeout>
+    <w:OptionSet xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+      <w:Option Name="SubscriptionName">hw_subscription</w:Option>
+      <w:Option Name="ContentFormat">RenderedText</w:Option>
+      <w:Option Name="IgnoreChannelError" xsi:nil="true"/>
+    </w:OptionSet> 
   </s:Header>
   <s:Body>
    <wse:Subscribe>{{if ne  .DeliveryMode "http://schemas.dmtf.org/wbem/wsman/1/wsman/Pull"}}<wse:EndTo>
@@ -377,6 +398,13 @@ const SubscribeTemplate = `<s:Envelope xmlns:s="` + NS_SOAP_ENV + `" xmlns:a="` 
 
 var subscribe_template = template.Must(template.New("Subscribe").Parse(SubscribeTemplate))
 
+const (
+	DELIVERYMODE_XMLSOAP_PUSH        = `http://schemas.xmlsoap.org/ws/2004/08/eventing/DeliveryModes/Push`
+	DELIVERYMODE_WSMAN_PUSH_WITH_ACK = `http://schemas.dmtf.org/wbem/wsman/1/wsman/PushWithAck`
+	DELIVERYMODE_WSMAN_EVENTS        = `http://schemas.dmtf.org/wbem/wsman/1/wsman/Events`
+	DELIVERYMODE_WSMAN_PULL          = `http://schemas.dmtf.org/wbem/wsman/1/wsman/Pull`
+)
+
 type Subscribe struct {
 	Namespace   string
 	MessageId   string
@@ -391,13 +419,6 @@ type Subscribe struct {
 	QueryList       map[string][]QueryFilter
 	SendBookmarks   bool
 }
-
-const (
-	DELIVERYMODE_XMLSOAP_PUSH        = `http://schemas.xmlsoap.org/ws/2004/08/eventing/DeliveryModes/Push`
-	DELIVERYMODE_WSMAN_PUSH_WITH_ACK = `http://schemas.dmtf.org/wbem/wsman/1/wsman/PushWithAck`
-	DELIVERYMODE_WSMAN_EVENTS        = `http://schemas.dmtf.org/wbem/wsman/1/wsman/Events`
-	DELIVERYMODE_WSMAN_PULL          = `http://schemas.dmtf.org/wbem/wsman/1/wsman/Pull`
-)
 
 type QueryFilter struct {
 	Path  string
