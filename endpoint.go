@@ -215,7 +215,11 @@ func (ep *Endpoint) Deliver(reader io.Reader) (io.Reader, error) {
 		if buf, ok := reader.(*bytes.Buffer); ok {
 			buffer = buf
 		} else if rd, ok := reader.(*bytes.Reader); ok {
-			buffer := bytes.NewBuffer(make([]byte, 0, rd.Len()))
+			buffer = bytes.NewBuffer(make([]byte, 0, rd.Len()))
+			io.Copy(buffer, rd)
+			rd.Seek(0, 0)
+		} else if rd, ok := reader.(*strings.Reader); ok {
+			buffer = bytes.NewBuffer(make([]byte, 0, rd.Len()))
 			io.Copy(buffer, rd)
 			rd.Seek(0, 0)
 		}
