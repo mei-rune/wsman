@@ -105,6 +105,7 @@ next_with_context:
 
 next_element:
 	nm, attrs, err := nextElement(c.decoder)
+
 	//fmt.Println("1===================", nm.Local, "items_enumerating =", c.items_enumerating, "err =", err)
 
 	if c.items_enumerating {

@@ -404,6 +404,13 @@ func ReadEnvelopeBody(decoder *xml.Decoder) error {
 	var action string
 	for {
 		nm, _, err := nextElement(decoder)
+		if nil != err {
+			if io.EOF == err {
+				return nil
+			}
+			return err
+		}
+
 		switch nm.Local {
 		case "Header":
 			action, err = ReadEnvelopeHeader(decoder)

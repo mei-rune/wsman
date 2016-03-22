@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"encoding/xml"
 	"errors"
+	"io"
 	"strings"
 
 	"github.com/runner-mei/wsman/envelope"
@@ -35,9 +36,15 @@ func NewShell(endpoint, user, pass, code_page string) (*Shell, error) {
 	}
 	for {
 		nm, _, err := nextElement(decoder)
+		if nil != err {
+			if io.EOF == err {
+				break
+			}
+			return nil, err
+		}
+
 		switch nm.Local {
 		case "ResourceCreated":
-
 			ok, err := locateElements(decoder, []string{"ReferenceParameters", "SelectorSet"})
 			if nil != err {
 				return nil, errors.New("locate 'Envelope/Body/ResourceCreated/ReferenceParameters/SelectorSet' failed, " + err.Error())
