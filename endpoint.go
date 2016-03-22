@@ -415,6 +415,9 @@ func ReadEnvelopeBody(decoder *xml.Decoder) error {
 		case "Header":
 			action, err = ReadEnvelopeHeader(decoder)
 			if nil != err {
+				if io.EOF == err {
+					return nil
+				}
 				return err
 			}
 		case "Body":
@@ -497,8 +500,11 @@ func ReadEnvelopeFault(decoder *xml.Decoder) error {
 					e.Detail = detail
 				}
 			default:
-				if e := skipElement(decoder, 0); nil != e {
-					return e
+				if err := skipElement(decoder, 0); nil != err {
+					if io.EOF == err {
+						return e
+					}
+					return err
 				}
 			}
 		}
