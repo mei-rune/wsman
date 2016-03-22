@@ -405,9 +405,6 @@ func ReadEnvelopeBody(decoder *xml.Decoder) error {
 	for {
 		nm, _, err := nextElement(decoder)
 		if nil != err {
-			if io.EOF == err {
-				return nil
-			}
 			return err
 		}
 
@@ -415,9 +412,6 @@ func ReadEnvelopeBody(decoder *xml.Decoder) error {
 		case "Header":
 			action, err = ReadEnvelopeHeader(decoder)
 			if nil != err {
-				if io.EOF == err {
-					return nil
-				}
 				return err
 			}
 		case "Body":
@@ -444,10 +438,10 @@ func ReadEnvelopeFault(decoder *xml.Decoder) error {
 	for {
 		t, err := decoder.Token()
 		if nil != err {
-			if io.EOF == err {
-				return e
+			if e.Code == "" {
+				return err
 			}
-			return err
+			return e
 		}
 
 		switch v := t.(type) {
@@ -501,10 +495,10 @@ func ReadEnvelopeFault(decoder *xml.Decoder) error {
 				}
 			default:
 				if err := skipElement(decoder, 0); nil != err {
-					if io.EOF == err {
-						return e
+					if e.Code == "" {
+						return err
 					}
-					return err
+					return e
 				}
 			}
 		}
