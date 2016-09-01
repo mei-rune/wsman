@@ -15,10 +15,11 @@ const (
 	NS_WSMAN_FAULT = "http://schemas.microsoft.com/wbem/wsman/1/wsmanfault"    // f:
 	NS_EVENTING    = "http://schemas.xmlsoap.org/ws/2004/08/eventing"
 
-	NS_WMI       = "http://schemas.microsoft.com/wbem/wsman/1/wmi"
-	NS_WMI_CIMV2 = "http://schemas.microsoft.com/wbem/wsman/1/wmi/root/cimv2"
-	NS_CIMV2     = "http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2"
-	NS_WINDOWS   = "http://schemas.microsoft.com/wbem/wsman/1/windows"
+	NS_WMI               = "http://schemas.microsoft.com/wbem/wsman/1/wmi"
+	NS_WMI_CIMV2         = "http://schemas.microsoft.com/wbem/wsman/1/wmi/root/cimv2"
+	NS_WMI_STANDARDCIMV2 = "http://schemas.microsoft.com/wbem/wsman/1/wmi/root/standardcimv2"
+	NS_CIMV2             = "http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2"
+	NS_WINDOWS           = "http://schemas.microsoft.com/wbem/wsman/1/windows"
 )
 
 // wmi      http://schemas.microsoft.com/wbem/wsman/1/wmi
