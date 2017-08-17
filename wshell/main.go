@@ -120,7 +120,6 @@ func main() {
 		if e := shell.Signal(cmd_id, wsman.SIGNAL_TERMINATE); nil != e {
 			fmt.Println("[error]", e)
 		}
-		shell = nil
 		is_terminate = true
 	}
 
@@ -173,7 +172,6 @@ func main() {
 				Exit(shell, int(code))
 				return
 			}
-
 			break
 		}
 	}
