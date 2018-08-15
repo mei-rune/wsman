@@ -137,7 +137,14 @@ func readXmlValue(decoder *xml.Decoder) (interface{}, error) {
 			charData = string(v)
 		case xml.StartElement:
 			switch v.Name.Local {
-			case "Datetime":
+
+			// <xs:element name="CIM_DateTime" type="xs:string" nillable="true"/>
+			// <xs:element name="Interval" type="xs:duration"/>
+			// <xs:element name="Date" type="xs:date"/>
+			// <xs:element name="Time" type="xs:time"/>
+			// <xs:element name="Datetime" type="xs:dateTime"/>
+
+			case "Datetime", "CIM_DateTime", "Date", "Time":
 				txt, e := readXmlText(decoder)
 				if nil != e {
 					return "", e
