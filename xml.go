@@ -154,6 +154,11 @@ func readXmlValue(decoder *xml.Decoder) (interface{}, error) {
 				if e = exitElement(decoder, 0); e != nil {
 					return nil, e
 				}
+
+				duration, err := DurationFromString(txt)
+				if err == nil {
+					return duration.ToDuration(), nil
+				}
 				return txt, nil
 			case "Address":
 				address, e := readXmlText(decoder)

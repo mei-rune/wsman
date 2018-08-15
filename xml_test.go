@@ -8,6 +8,7 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/runner-mei/wsman/envelope"
 )
@@ -205,10 +206,10 @@ func TestEnumerateSimple(t *testing.T) {
 				t.Error("'AutomaticStartupActionDelay' is not exists or nil.")
 				return
 			}
-			if duration, ok := v.(string); !ok {
+			if duration, ok := v.(time.Duration); !ok {
 				t.Error("'AutomaticStartupActionDelay' is not a duration.")
 				return
-			} else if duration != "P0DT0H1M40S" {
+			} else if duration != 1*time.Minute+40*time.Second {
 				t.Error("'AutomaticStartupActionDelay' except 0 got", duration)
 				return
 			}
