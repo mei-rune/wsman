@@ -30,6 +30,9 @@ var simple_enumerate_response = `
           <p:CreationDate>
             <cim:Datetime>2014-04-03T14:45:50.46875+08:00</cim:Datetime>
           </p:CreationDate>
+          <p:AutomaticStartupActionDelay>
+              <cim:Interval>P0DT0H1M40S</cim:Interval>
+          </p:AutomaticStartupActionDelay>
           <p:IPAddress>192.168.1.103</p:IPAddress>
           <p:IPAddress>fe80::6962:c157:2318:423d</p:IPAddress>
           <p:IPAddress>192.168.1.102</p:IPAddress>
@@ -195,6 +198,19 @@ func TestEnumerateSimple(t *testing.T) {
 
 			if "2014-04-03T14:45:50.46875+08:00" != m["CreationDate"] {
 				t.Error("value of 'CreationDate' is not excepted, actual is", m["CreationDate"])
+			}
+
+			v, ok = m["AutomaticStartupActionDelay"]
+			if !ok || nil == v {
+				t.Error("'AutomaticStartupActionDelay' is not exists or nil.")
+				return
+			}
+			if duration, ok := v.(string); !ok {
+				t.Error("'AutomaticStartupActionDelay' is not a duration.")
+				return
+			} else if duration != "P0DT0H1M40S" {
+				t.Error("'AutomaticStartupActionDelay' except 0 got", duration)
+				return
 			}
 
 			v, ok = m["IPAddress"]
