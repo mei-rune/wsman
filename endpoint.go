@@ -30,6 +30,20 @@ func ElementNotExists(nm string) error {
 	return errors.New("'" + nm + "' is not exists.")
 }
 
+type Reference struct {
+	// <a:Address>http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</a:Address>
+	// <a:ReferenceParameters>
+	//     <w:ResourceURI>http://schemas.microsoft.com/wbem/wsman/1/wmi/root/virtualization/Msvm_Synthetic3DDisplayControllerSettingData</w:ResourceURI>
+	//     <w:SelectorSet>
+	//         <w:Selector Name="InstanceID">Microsoft:Definition\06FF76FA-2D58-4BAF-9F8D-455773824F37\Default</w:Selector>
+	//     </w:SelectorSet>
+	// </a:ReferenceParameters>
+
+	Address     string
+	ResourceURI string
+	SelectorSet map[string]string
+}
+
 func readXmlText(decoder *xml.Decoder) (string, error) {
 	var context string
 	for {
@@ -42,6 +56,105 @@ func readXmlText(decoder *xml.Decoder) (string, error) {
 			return context, nil
 		case xml.CharData:
 			context = string(v)
+		// case xml.StartElement:
+		// 	switch v.Name.Local {
+		// 	case "Datetime":
+		// 		txt, e := readXmlText(decoder)
+		// 		if nil != e {
+		// 			return "", e
+		// 		}
+		// 		if e = exitElement(decoder, 0); nil != e {
+		// 			return txt, e
+		// 		}
+		// 		return txt, nil
+		// 	default:
+		// 		return context, errors.New("element '" + v.Name.Local + "' is not excepted, excepted is CharData")
+		// 	}
+		default:
+			return context, fmt.Errorf("token '%T' is not excepted, excepted is CharData", v)
+		}
+	}
+}
+
+func readReferenceParameters(decoder *xml.Decoder, reference *Reference) error {
+	// <a:Address>http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</a:Address>
+	// <a:ReferenceParameters>
+	//     <w:ResourceURI>http://schemas.microsoft.com/wbem/wsman/1/wmi/root/virtualization/Msvm_Synthetic3DDisplayControllerSettingData</w:ResourceURI>
+	//     <w:SelectorSet>
+	//         <w:Selector Name="InstanceID">Microsoft:Definition\06FF76FA-2D58-4BAF-9F8D-455773824F37\Default</w:Selector>
+	//     </w:SelectorSet>
+	// </a:ReferenceParameters>
+
+	inSet := false
+	for {
+		token, err := decoder.Token()
+		if nil != err {
+			return err
+		}
+		switch v := token.(type) {
+		case xml.EndElement:
+			if inSet {
+				inSet = false
+				break
+			}
+			return nil
+		case xml.CharData:
+		case xml.StartElement:
+			switch v.Name.Local {
+			case "ResourceURI":
+				txt, e := readXmlText(decoder)
+				if nil != e {
+					return e
+				}
+				reference.ResourceURI = txt
+			case "SelectorSet":
+				inSet = true
+			case "Selector":
+				if !inSet {
+					return errors.New("element '" + v.Name.Local + "' is not excepted, excepted is ResourceURI or SelectorSet")
+				}
+
+				txt, e := readXmlText(decoder)
+				if nil != e {
+					return e
+				}
+
+				for _, attr := range v.Attr {
+					if "Name" == attr.Name.Local {
+						if reference.SelectorSet == nil {
+							reference.SelectorSet = map[string]string{}
+						}
+						reference.SelectorSet[attr.Value] = txt
+					}
+				}
+			default:
+				return errors.New("element '" + v.Name.Local + "' is not excepted, excepted is CharData")
+			}
+		default:
+			return fmt.Errorf("token '%T' is not excepted, excepted is CharData", v)
+		}
+	}
+}
+
+func readXmlValue(decoder *xml.Decoder) (interface{}, error) {
+	var reference *Reference
+	var charData string
+	for {
+		token, err := decoder.Token()
+		if nil != err {
+			return nil, err
+		}
+		switch v := token.(type) {
+		case xml.EndElement:
+			if reference != nil {
+				return reference, nil
+			}
+			if charData != "" {
+				return charData, nil
+			}
+			return nil, nil
+		case xml.CharData:
+			charData = string(v)
 		case xml.StartElement:
 			switch v.Name.Local {
 			case "Datetime":
@@ -49,15 +162,31 @@ func readXmlText(decoder *xml.Decoder) (string, error) {
 				if nil != e {
 					return "", e
 				}
-				if e = exitElement(decoder, 0); nil != e {
-					return txt, e
+				if e = exitElement(decoder, 0); e != nil {
+					return nil, e
 				}
 				return txt, nil
+			case "Address":
+				address, e := readXmlText(decoder)
+				if nil != e {
+					return nil, e
+				}
+				if reference == nil {
+					reference = &Reference{}
+				}
+				reference.Address = address
+			case "ReferenceParameters":
+				if reference == nil {
+					reference = &Reference{}
+				}
+				if e := readReferenceParameters(decoder, reference); e != nil {
+					return nil, e
+				}
 			default:
-				return context, errors.New("element '" + v.Name.Local + "' is not excepted, excepted is CharData")
+				return nil, errors.New("element '" + v.Name.Local + "' is not excepted, excepted is CharData")
 			}
 		default:
-			return context, fmt.Errorf("token '%T' is not excepted, excepted is CharData", v)
+			return nil, fmt.Errorf("token '%T' is not excepted, excepted is CharData", v)
 		}
 	}
 }
@@ -148,7 +277,7 @@ func locateElements(decoder *xml.Decoder, names []string) (bool, error) {
 	return true, nil
 }
 
-func is_nil(attrs []xml.Attr) bool {
+func isNil(attrs []xml.Attr) bool {
 	for _, attr := range attrs {
 		if "nil" == attr.Name.Local && "true" == attr.Value {
 			return true
@@ -169,28 +298,27 @@ func toMap(decoder *xml.Decoder) (map[string]interface{}, error) {
 			return m, nil
 		case xml.StartElement:
 			var value interface{}
-			if is_nil(v.Attr) {
+			if isNil(v.Attr) {
 				if e := skipElement(decoder, 0); nil != e {
 					return nil, e
 				}
 				value = nil
 			} else {
-				txt, e := readXmlText(decoder)
+				xmlValue, e := readXmlValue(decoder)
 				if nil != e {
 					if ElementEndError != e {
 						return nil, e
-					} else {
-						value = nil
 					}
+					value = nil
 				} else {
-					if "" == txt && len(v.Attr) > 0 {
+					if xmlValue == nil && len(v.Attr) > 0 {
 						for _, attr := range v.Attr {
 							if "SystemTime" == attr.Name.Local {
-								txt = attr.Value
+								xmlValue = attr.Value
 							}
 						}
 					}
-					value = txt
+					value = xmlValue
 				}
 			}
 
@@ -430,7 +558,7 @@ func ReadEnvelopeFault(decoder *xml.Decoder) error {
 		return err
 	}
 	if !ok {
-		return errors.New("fault isn't exists in the FaultMessage.")
+		return errors.New("fault isn't exists in the FaultMessage")
 	}
 
 	e := &ErrSoapFault{}
@@ -459,40 +587,40 @@ func ReadEnvelopeFault(decoder *xml.Decoder) error {
 			case "Subcode":
 				state = 2
 			case "Value", "faultcode":
-				if code, err := readXmlText(decoder); nil != err {
+				code, err := readXmlText(decoder)
+				if nil != err {
 					return err
-				} else {
-					switch state {
-					case 2:
+				}
+				switch state {
+				case 2:
+					e.Subcode = code
+				default:
+					e.Code = code
+					if "" == e.Subcode {
 						e.Subcode = code
-					default:
-						e.Code = code
-						if "" == e.Subcode {
-							e.Subcode = code
-						}
 					}
 				}
 			case "Text":
-				if txt, err := readXmlText(decoder); nil != err {
+				txt, err := readXmlText(decoder)
+				if nil != err {
 					return err
-				} else {
-					e.Reason = txt
 				}
+				e.Reason = txt
 			case "Reason":
 				state = 3
 			case "Detail":
-				if detail, err := readXmlText(decoder); nil != err {
+				detail, err := readXmlText(decoder)
+				if nil != err {
 					return err
-				} else {
-					e.Detail = strings.TrimSpace(detail)
 				}
+				e.Detail = strings.TrimSpace(detail)
 			case "faultstring":
-				if detail, err := readXmlText(decoder); nil != err {
+				detail, err := readXmlText(decoder)
+				if nil != err {
 					return err
-				} else {
-					e.Reason = detail
-					e.Detail = detail
 				}
+				e.Reason = detail
+				e.Detail = detail
 			default:
 				if err := skipElement(decoder, 0); nil != err {
 					if e.Code == "" {

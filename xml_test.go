@@ -122,6 +122,46 @@ var simple_get_response = `
   </s:Body>
 </s:Envelope>`
 
+const enumerateResponseWithAddressing = `<s:Envelope xml:lang="zh-CN" xmlns:s="http://www.w3.org/2003/05/soap-envelope" xmlns:a="http://schemas.xmlsoap.org/ws/2004/08/addressing" xmlns:n="http://schemas.xmlsoap.org/ws/2004/09/enumeration" xmlns:w="http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd">
+    <s:Header>
+        <a:Action>http://schemas.xmlsoap.org/ws/2004/09/enumeration/EnumerateResponse</a:Action>
+        <a:MessageID>uuid:B82A9456-26E4-487B-BED6-A95736911AB0</a:MessageID>
+        <a:To>http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</a:To>
+        <a:RelatesTo>uuid:9776229c-9e00-4f22-c7a9-86664c90959a</a:RelatesTo>
+    </s:Header>
+    <s:Body>
+        <n:EnumerateResponse>
+            <n:EnumerationContext>uuid:40DF132C-91C8-4A4C-B99B-E8012432DA5D</n:EnumerationContext>
+            <w:Items>
+                <p:Msvm_SettingsDefineCapabilities xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:p="http://schemas.microsoft.com/wbem/wsman/1/wmi/root/virtualization/Msvm_SettingsDefineCapabilities" xmlns:cim="http://schemas.dmtf.org/wbem/wscim/1/common" xsi:type="p:Msvm_SettingsDefineCapabilities_Type">
+                    <p:GroupComponent xmlns:a="http://schemas.xmlsoap.org/ws/2004/08/addressing" xmlns:w="http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd">
+                        <a:Address>http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</a:Address>
+                        <a:ReferenceParameters>
+                            <w:ResourceURI>http://schemas.microsoft.com/wbem/wsman/1/wmi/root/virtualization/Msvm_AllocationCapabilities</w:ResourceURI>
+                            <w:SelectorSet>
+                                <w:Selector Name="InstanceID">Microsoft:06FF76FA-2D58-4BAF-9F8D-455773824F37</w:Selector>
+                            </w:SelectorSet>
+                        </a:ReferenceParameters>
+                    </p:GroupComponent>
+                    <p:PartComponent xmlns:a="http://schemas.xmlsoap.org/ws/2004/08/addressing" xmlns:w="http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd">
+                        <a:Address>http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</a:Address>
+                        <a:ReferenceParameters>
+                            <w:ResourceURI>http://schemas.microsoft.com/wbem/wsman/1/wmi/root/virtualization/Msvm_Synthetic3DDisplayControllerSettingData</w:ResourceURI>
+                            <w:SelectorSet>
+                                <w:Selector Name="InstanceID">Microsoft:Definition\06FF76FA-2D58-4BAF-9F8D-455773824F37\Default</w:Selector>
+                            </w:SelectorSet>
+                        </a:ReferenceParameters>
+                    </p:PartComponent>
+                    <p:PropertyPolicy>0</p:PropertyPolicy>
+                    <p:ValueRange>0</p:ValueRange>
+                    <p:ValueRole>0</p:ValueRole>
+                </p:Msvm_SettingsDefineCapabilities>
+            </w:Items>
+            <n:EndOfSequence/>
+        </n:EnumerateResponse>
+    </s:Body>
+</s:Envelope>`
+
 func TestEnumerateSimple(t *testing.T) {
 	hsrv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if CanHandle(r) {
@@ -196,6 +236,93 @@ func TestEnumerateSimple(t *testing.T) {
 	check()
 	WSMAN_DEBUG = true
 	check()
+}
+
+func TestEnumerateWithAddressing(t *testing.T) {
+	hsrv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if CanHandle(r) {
+			w.WriteHeader(http.StatusOK)
+			io.WriteString(w, enumerateResponseWithAddressing)
+		}
+	}))
+	defer hsrv.Close()
+
+	check := func() {
+		it := Enumerate(&Endpoint{Url: hsrv.URL, User: "apd", Password: "123"}, envelope.NS_WMI+"/root/virtualization", "Msvm_SettingsDefineCapabilities", nil)
+		count := 0
+		for it.Next() {
+			count++
+			m, e := it.Value()
+			if nil != e {
+				t.Error(e)
+				break
+			}
+			o := m["GroupComponent"]
+			groupComponent, _ := o.(*Reference)
+			if groupComponent == nil {
+				t.Error("excepted GroupComponent got nil")
+				break
+			}
+			if groupComponent.Address != "http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous" {
+				t.Error("GroupComponent.Address excepted \"http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous\" got", groupComponent.Address)
+				break
+			}
+			if groupComponent.ResourceURI != "http://schemas.microsoft.com/wbem/wsman/1/wmi/root/virtualization/Msvm_AllocationCapabilities" {
+				t.Error("GroupComponent.ResourceURI excepted \"http://schemas.microsoft.com/wbem/wsman/1/wmi/root/virtualization/Msvm_AllocationCapabilities\" got", groupComponent.Address)
+				break
+			}
+
+			if len(groupComponent.SelectorSet) != 1 {
+				t.Error("len(GroupComponent.SelectorSet) except 1 got", len(groupComponent.SelectorSet))
+				t.Log(groupComponent.SelectorSet)
+				break
+			}
+			if groupComponent.SelectorSet["InstanceID"] != "Microsoft:06FF76FA-2D58-4BAF-9F8D-455773824F37" {
+				t.Error("GroupComponent.SelectorSet[\"InstanceID\"] except \"Microsoft:06FF76FA-2D58-4BAF-9F8D-455773824F37\" got", groupComponent.SelectorSet["InstanceID"])
+				t.Log(groupComponent.SelectorSet)
+				break
+			}
+			o = m["PartComponent"]
+			partComponent, _ := o.(*Reference)
+			if partComponent == nil {
+				t.Error("excepted PartComponent got nil")
+				break
+			}
+			if partComponent.Address != "http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous" {
+				t.Error("GroupComponent.Address excepted \"http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous\" got", partComponent.Address)
+				break
+			}
+			if partComponent.ResourceURI != "http://schemas.microsoft.com/wbem/wsman/1/wmi/root/virtualization/Msvm_Synthetic3DDisplayControllerSettingData" {
+				t.Error("GroupComponent.ResourceURI excepted \"http://schemas.microsoft.com/wbem/wsman/1/wmi/root/virtualization/Msvm_Synthetic3DDisplayControllerSettingData\" got", partComponent.Address)
+				break
+			}
+
+			if len(partComponent.SelectorSet) != 1 {
+				t.Error("len(GroupComponent.SelectorSet) except 1 got", len(partComponent.SelectorSet))
+				t.Log(partComponent.SelectorSet)
+				break
+			}
+			if partComponent.SelectorSet["InstanceID"] != "Microsoft:Definition\\06FF76FA-2D58-4BAF-9F8D-455773824F37\\Default" {
+				t.Error("GroupComponent.SelectorSet[\"InstanceID\"] except \"Microsoft:Definition\\06FF76FA-2D58-4BAF-9F8D-455773824F37\\Default\" got", partComponent.SelectorSet["InstanceID"])
+				t.Log(partComponent.SelectorSet)
+				break
+			}
+			t.Log(m)
+		}
+
+		if 1 != count {
+			t.Error("excepted count is 1, actual is ", count)
+		}
+		if nil != it.Err() {
+			t.Error(it.Err())
+		}
+		it.Close()
+	}
+
+	WSMAN_DEBUG = false
+	check()
+	// WSMAN_DEBUG = true
+	// check()
 }
 
 func TestGetSimple(t *testing.T) {
