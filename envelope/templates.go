@@ -433,9 +433,12 @@ const UnsubscribeTemplate = `<s:Envelope xmlns:s="` + NS_SOAP_ENV + `" xmlns:a="
   <s:Header>
     <a:To>http://localhost:5985/wsman</a:To>
     <w:ResourceURI s:mustUnderstand="true">{{.Namespace}}/{{.Name}}</w:ResourceURI>
-    {{if .SelectorSet}}<w:SelectorSet>
-    {{range $key, $value := .SelectorSet}}<w:Selector Name="{{$key}}">{{$value}}</w:Selector>{{end}}
-    </w:SelectorSet>{{end}}
+    {{- if .SelectorSet}}<w:SelectorSet>
+    {{- range $key, $value := .SelectorSet}}
+      <w:Selector Name="{{$key}}">{{$value}}</w:Selector>
+    {{- end}}
+    </w:SelectorSet>
+    {{- end}}
     <a:ReplyTo>
       <a:Address s:mustUnderstand="true">http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</a:Address>
     </a:ReplyTo>
@@ -449,3 +452,59 @@ const UnsubscribeTemplate = `<s:Envelope xmlns:s="` + NS_SOAP_ENV + `" xmlns:a="
     </wse:Unsubscribe>
   </s:Body>
  </s:Envelope>`
+
+var unsubscribe_template = template.Must(template.New("Unsubscribe").Parse(UnsubscribeTemplate))
+
+type Unsubscribe struct {
+	Namespace   string
+	MessageId   string
+	Name        string
+	SelectorSet map[string]string
+}
+
+func (m *Unsubscribe) Xml() string {
+	return applyTemplate(unsubscribe_template, m)
+}
+
+const InvokeTemplate = `<s:Envelope xmlns:s="` + NS_SOAP_ENV + `" xmlns:a="` + NS_ADDRESSING + `" xmlns:w="` + NS_WSMAN_DMTF + `" xmlns:p="` + NS_WSMAN_MSFT + `">
+    <s:Header>
+        <a:To>http://localhost:5985/wsman</a:To>
+        <w:ResourceURI s:mustUnderstand="true">{{.Namespace}}/{{.Name}}</w:ResourceURI>
+        {{- if .SelectorSet}}<w:SelectorSet>
+        {{- range $key, $value := .SelectorSet}}
+          <w:Selector Name="{{$key}}">{{$value}}</w:Selector>
+        {{- end}}
+        </w:SelectorSet>
+        {{- end}}
+
+        <a:ReplyTo>
+            <a:Address s:mustUnderstand="true">http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</a:Address>
+        </a:ReplyTo>
+        <a:Action s:mustUnderstand="true">{{.Namespace}}/{{.Name}}/{{.Method}}</a:Action>
+        <w:MaxEnvelopeSize s:mustUnderstand="true">153600</w:MaxEnvelopeSize>
+        <a:MessageID>uuid:{{.MessageId}}</a:MessageID>
+        <w:OperationTimeout>PT60S</w:OperationTimeout>
+    </s:Header>
+    <s:Body>
+        <p:{{.Method}}_INPUT xmlns:p="{{.Namespace}}/{{.Name}}">
+            {{- range $key, $value := .InParameters}}
+            <p:{{$key}}>{{$value}}</p:{{$key}}>
+            {{- end}}
+        </p:{{.Method}}_INPUT>
+    </s:Body>
+</s:Envelope>`
+
+var invoke_template = template.Must(template.New("InvokeMethod").Parse(InvokeTemplate))
+
+type InvokeMethod struct {
+	Namespace    string
+	MessageId    string
+	Name         string
+	SelectorSet  map[string]string
+	Method       string
+	InParameters map[string]interface{}
+}
+
+func (m *InvokeMethod) Xml() string {
+	return applyTemplate(invoke_template, m)
+}

@@ -152,3 +152,26 @@ func TestSimpleGetServiceWithName(t *testing.T) {
 
 	t.Log(m)
 }
+
+func TestSimpleInvokeServiceWithName(t *testing.T) {
+	if "windows" != runtime.GOOS {
+		t.Skip("linux is not supported.")
+	}
+	m, e := Invoke(&Endpoint{Url: *win_url, User: *win_user, Password: *win_password},
+		envelope.NS_WMI_CIMV2, "Win32_Service", map[string]string{"Name": "spooler"}, "StopService", nil)
+	if nil != e {
+		t.Error(e)
+		return
+	}
+
+	t.Log(m)
+
+	m, e = Invoke(&Endpoint{Url: *win_url, User: *win_user, Password: *win_password},
+		envelope.NS_WMI_CIMV2, "Win32_Service", map[string]string{"Name": "spooler"}, "StartService", nil)
+	if nil != e {
+		t.Error(e)
+		return
+	}
+
+	t.Log(m)
+}
