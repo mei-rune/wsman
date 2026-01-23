@@ -13,7 +13,7 @@ const CreateShellTemplate = `<s:Envelope xmlns:s="` + NS_SOAP_ENV + `" xmlns:a="
     </a:ReplyTo>
     <w:MaxEnvelopeSize mustUnderstand="true">153600</w:MaxEnvelopeSize>
     <a:MessageID>uuid:{{.MessageId}}</a:MessageID>
-    <w:OperationTimeout>PT60S</w:OperationTimeout>
+    <w:OperationTimeout>{{.OperationTimeout}}</w:OperationTimeout>
     <w:ResourceURI mustUnderstand="true">http://schemas.microsoft.com/wbem/wsman/1/windows/shell/cmd</w:ResourceURI>
     <a:Action mustUnderstand="true">http://schemas.xmlsoap.org/ws/2004/09/transfer/Create</a:Action>
     <w:OptionSet>
@@ -34,14 +34,18 @@ var create_shell_template = template.Must(template.New("CreateShell").Parse(Crea
 type CreateShell struct {
 	CodePage  string
 	MessageId string
+  OperationTimeout string
 }
 
 func (m *CreateShell) Xml() string {
+  if m.OperationTimeout == "" {
+    m.OperationTimeout = "PT60S"
+  }
 	return applyTemplate(create_shell_template, m)
 }
 
 const DeleteShellTemplate = `<s:Envelope xmlns:s="` + NS_SOAP_ENV + `" xmlns:a="` + NS_ADDRESSING + `" xmlns:w="` + NS_WSMAN_DMTF + `">
-  <s:Header>    
+  <s:Header>
     <a:Action mustUnderstand="true">http://schemas.xmlsoap.org/ws/2004/09/transfer/Delete</a:Action>
     <a:MessageID>uuid:{{.MessageId}}</a:MessageID>
     <w:ResourceURI mustUnderstand="true">http://schemas.microsoft.com/wbem/wsman/1/windows/shell/cmd</w:ResourceURI>
@@ -53,7 +57,7 @@ const DeleteShellTemplate = `<s:Envelope xmlns:s="` + NS_SOAP_ENV + `" xmlns:a="
       <a:Address mustUnderstand="true">http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</a:Address>
     </a:ReplyTo>
     <w:MaxEnvelopeSize mustUnderstand="true">153600</w:MaxEnvelopeSize>
-    <w:OperationTimeout>PT60S</w:OperationTimeout>
+    <w:OperationTimeout>{{.OperationTimeout}}</w:OperationTimeout>
   </s:Header>
   <s:Body/>
 </s:Envelope>`
@@ -63,9 +67,13 @@ var delete_shell_template = template.Must(template.New("DeleteShell").Parse(Dele
 type DeleteShell struct {
 	MessageId string
 	ShellId   string
+  OperationTimeout string
 }
 
 func (m *DeleteShell) Xml() string {
+  if m.OperationTimeout == "" {
+    m.OperationTimeout = "PT60S"
+  }
 	return applyTemplate(delete_shell_template, m)
 }
 
@@ -82,7 +90,7 @@ const CreateCommandTemplate = `<s:Envelope xmlns:s="` + NS_SOAP_ENV + `" xmlns:a
       <a:Address mustUnderstand="true">http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</a:Address>
     </a:ReplyTo>
     <w:MaxEnvelopeSize mustUnderstand="true">153600</w:MaxEnvelopeSize>
-    <w:OperationTimeout>PT60S</w:OperationTimeout>
+    <w:OperationTimeout>{{.OperationTimeout}}</w:OperationTimeout>
     <w:OptionSet>
       <w:Option Name="WINRS_CONSOLEMODE_STDIN">TRUE</w:Option>
       <w:Option Name="WINRS_SKIP_CMD_SHELL">FALSE</w:Option>
@@ -101,11 +109,15 @@ var create_template = template.Must(template.New("CreateCommand").Parse(CreateCo
 type CreateCommand struct {
 	MessageId   string
 	ShellId     string
+  OperationTimeout string
 	CommandText string
 	Arguments   []string
 }
 
 func (m *CreateCommand) Xml() string {
+  if m.OperationTimeout == "" {
+    m.OperationTimeout = "PT60S"
+  }
 	return applyTemplate(create_template, m)
 }
 
@@ -122,7 +134,7 @@ const SendTemplate = `<s:Envelope xmlns:s="` + NS_SOAP_ENV + `" xmlns:a="` + NS_
         <a:Address s:mustUnderstand="true">http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</a:Address>
       </a:ReplyTo>
       <w:MaxEnvelopeSize s:mustUnderstand="true">153600</w:MaxEnvelopeSize>
-      <w:OperationTimeout>PT60S</w:OperationTimeout>
+      <w:OperationTimeout>{{.OperationTimeout}}</w:OperationTimeout>
     </s:Header>
     <s:Body>
       <rsp:Send xmlns:rsp="http://schemas.microsoft.com/wbem/wsman/1/windows/shell">
@@ -134,6 +146,7 @@ const SendTemplate = `<s:Envelope xmlns:s="` + NS_SOAP_ENV + `" xmlns:a="` + NS_
 var send_template = template.Must(template.New("Send").Parse(SendTemplate))
 
 type Send struct {
+  OperationTimeout string
 	MessageId string
 	ShellId   string
 	CommandId string
@@ -141,6 +154,9 @@ type Send struct {
 }
 
 func (m *Send) Xml() string {
+  if m.OperationTimeout == "" {
+    m.OperationTimeout = "PT60S"
+  }
 	return applyTemplate(send_template, m)
 }
 
@@ -157,7 +173,7 @@ const ReceiveTemplate = `<s:Envelope xmlns:s="` + NS_SOAP_ENV + `" xmlns:a="` + 
       <a:Address mustUnderstand="true">http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</a:Address>
     </a:ReplyTo>
     <w:MaxEnvelopeSize mustUnderstand="true">153600</w:MaxEnvelopeSize>
-    <w:OperationTimeout>PT60S</w:OperationTimeout>
+    <w:OperationTimeout>{{.OperationTimeout}}</w:OperationTimeout>
   </s:Header>
   <s:Body>
     <rsp:Receive>
@@ -171,10 +187,14 @@ var receive_template = template.Must(template.New("Receive").Parse(ReceiveTempla
 type Receive struct {
 	MessageId string
 	ShellId   string
+  OperationTimeout string
 	CommandId string
 }
 
 func (m *Receive) Xml() string {
+  if m.OperationTimeout == "" {
+    m.OperationTimeout = "PT60S"
+  }
 	return applyTemplate(receive_template, m)
 }
 
@@ -191,7 +211,7 @@ const SignalTemplate = `<s:Envelope xmlns:s="` + NS_SOAP_ENV + `" xmlns:a="` + N
       <a:Address s:mustUnderstand="true">http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</a:Address>
     </a:ReplyTo>
     <w:MaxEnvelopeSize s:mustUnderstand="true">153600</w:MaxEnvelopeSize>
-    <w:OperationTimeout>PT60S</w:OperationTimeout>
+    <w:OperationTimeout>{{.OperationTimeout}}</w:OperationTimeout>
   </s:Header>
   <s:Body>
     <rsp:Signal xmlns:rsp="http://schemas.microsoft.com/wbem/wsman/1/windows/shell" CommandId="{{.CommandId}}">
@@ -206,10 +226,14 @@ type Signal struct {
 	MessageId string
 	ShellId   string
 	CommandId string
+  OperationTimeout string
 	Value     string
 }
 
 func (m *Signal) Xml() string {
+  if m.OperationTimeout == "" {
+    m.OperationTimeout = "PT60S"
+  }
 	return applyTemplate(signal_template, m)
 }
 
@@ -226,7 +250,7 @@ const EnumerateTemplate = `<s:Envelope xmlns:s="` + NS_SOAP_ENV + `" xmlns:a="` 
       <a:Address s:mustUnderstand="true">http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</a:Address>
     </a:ReplyTo>
     <w:MaxEnvelopeSize s:mustUnderstand="true">153600</w:MaxEnvelopeSize>
-    <w:OperationTimeout>PT60S</w:OperationTimeout>
+    <w:OperationTimeout>{{.OperationTimeout}}</w:OperationTimeout>
     {{if .OptionSet}}<w:OptionSet>
       {{range $key, $value := .OptionSet}}<w:Option Name="{{$key}}">{{$value}}</w:Option>{{end}}
     </w:OptionSet>
@@ -245,11 +269,15 @@ type Enumerate struct {
 	Namespace   string
 	MessageId   string
 	Name        string
+  OperationTimeout string
 	SelectorSet map[string]string
 	OptionSet   map[string]string
 }
 
 func (m *Enumerate) Xml() string {
+  if m.OperationTimeout == "" {
+    m.OperationTimeout = "PT60S"
+  }
 	return applyTemplate(enumerate_template, m)
 }
 
@@ -266,7 +294,7 @@ const PullTemplate = `<s:Envelope xmlns:s="` + NS_SOAP_ENV + `" xmlns:a="` + NS_
     </a:ReplyTo>
     <w:MaxEnvelopeSize s:mustUnderstand="true">153600</w:MaxEnvelopeSize>
     <a:MessageID>uuid:{{.MessageId}}</a:MessageID>
-    <w:OperationTimeout>{{if eq .Timeout 0}}PT60S{{else}}PT{{.Timeout}}S{{end}}</w:OperationTimeout>
+    <w:OperationTimeout>{{.OperationTimeout}}</w:OperationTimeout>
     {{if .OptionSet}}<w:OptionSet>
       {{range $key, $value := .OptionSet}}<w:Option Name="{{$key}}">{{$value}}</w:Option>{{end}}
     </w:OptionSet>
@@ -287,11 +315,14 @@ type Pull struct {
 	Name        string
 	SelectorSet map[string]string
 	Context     string
-	Timeout     uint
+  OperationTimeout string
 	OptionSet   map[string]string
 }
 
 func (m *Pull) Xml() string {
+  if m.OperationTimeout == "" {
+    m.OperationTimeout = "PT60S"
+  }
 	return applyTemplate(pull_template, m)
 }
 
@@ -308,7 +339,7 @@ const GetTemplate = `<s:Envelope xmlns:s="` + NS_SOAP_ENV + `" xmlns:a="` + NS_A
     </a:ReplyTo>
     <w:MaxEnvelopeSize s:mustUnderstand="true">153600</w:MaxEnvelopeSize>
     <a:MessageID>uuid:{{.MessageId}}</a:MessageID>
-    <w:OperationTimeout>PT60S</w:OperationTimeout>
+    <w:OperationTimeout>{{.OperationTimeout}}</w:OperationTimeout>
     {{if .OptionSet}}<w:OptionSet xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
       {{range $key, $value := .OptionSet}}<w:Option Name="{{$key}}">{{$value}}</w:Option>{{end}}
     </w:OptionSet>
@@ -323,11 +354,15 @@ type Get struct {
 	Namespace   string
 	MessageId   string
 	Name        string
+  OperationTimeout string
 	SelectorSet map[string]string
 	OptionSet   map[string]string
 }
 
 func (m *Get) Xml() string {
+  if m.OperationTimeout == "" {
+    m.OperationTimeout = "PT60S"
+  }
 	return applyTemplate(get_template, m)
 }
 
@@ -353,7 +388,7 @@ const SubscribeTemplate = `<s:Envelope xmlns:s="` + NS_SOAP_ENV + `" xmlns:a="` 
     <a:Action s:mustUnderstand="true">http://schemas.xmlsoap.org/ws/2004/08/eventing/Subscribe</a:Action>
     <w:MaxEnvelopeSize s:mustUnderstand="true">153600</w:MaxEnvelopeSize>
     <a:MessageID>uuid:{{.MessageId}}</a:MessageID>
-    <w:OperationTimeout>PT60S</w:OperationTimeout>
+    <w:OperationTimeout>{{.OperationTimeout}}</w:OperationTimeout>
     <w:OptionSet xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
       <w:Option Name="SubscriptionName">hw_subscription</w:Option>
       <w:Option Name="ContentFormat">RenderedText</w:Option>
@@ -409,6 +444,7 @@ type Subscribe struct {
 	Namespace   string
 	MessageId   string
 	Name        string
+  OperationTimeout string
 	SelectorSet map[string]string
 
 	DeliveryMode    string
@@ -426,6 +462,9 @@ type QueryFilter struct {
 }
 
 func (m *Subscribe) Xml() string {
+  if m.OperationTimeout == "" {
+    m.OperationTimeout = "PT60S"
+  }
 	return applyTemplate(subscribe_template, m)
 }
 
@@ -445,7 +484,7 @@ const UnsubscribeTemplate = `<s:Envelope xmlns:s="` + NS_SOAP_ENV + `" xmlns:a="
     <a:Action s:mustUnderstand="true">http://schemas.xmlsoap.org/ws/2004/08/eventing/Unsubscribe</a:Action>
     <w:MaxEnvelopeSize s:mustUnderstand="true">153600</w:MaxEnvelopeSize>
     <a:MessageID>uuid:{{.MessageId}}</a:MessageID>
-    <w:OperationTimeout>PT60S</w:OperationTimeout>
+    <w:OperationTimeout>{{.OperationTimeout}}</w:OperationTimeout>
   </s:Header>
   <s:Body>
     <wse:Unsubscribe>
@@ -459,10 +498,14 @@ type Unsubscribe struct {
 	Namespace   string
 	MessageId   string
 	Name        string
+  OperationTimeout string
 	SelectorSet map[string]string
 }
 
 func (m *Unsubscribe) Xml() string {
+  if m.OperationTimeout == "" {
+    m.OperationTimeout = "PT60S"
+  }
 	return applyTemplate(unsubscribe_template, m)
 }
 
@@ -483,7 +526,7 @@ const InvokeTemplate = `<s:Envelope xmlns:s="` + NS_SOAP_ENV + `" xmlns:a="` + N
         <a:Action s:mustUnderstand="true">{{.Namespace}}/{{.Name}}/{{.Method}}</a:Action>
         <w:MaxEnvelopeSize s:mustUnderstand="true">153600</w:MaxEnvelopeSize>
         <a:MessageID>uuid:{{.MessageId}}</a:MessageID>
-        <w:OperationTimeout>PT60S</w:OperationTimeout>
+        <w:OperationTimeout>{{.OperationTimeout}}</w:OperationTimeout>
     </s:Header>
     <s:Body>
         <p:{{.Method}}_INPUT xmlns:p="{{.Namespace}}/{{.Name}}">
@@ -500,11 +543,15 @@ type InvokeMethod struct {
 	Namespace    string
 	MessageId    string
 	Name         string
+  OperationTimeout string
 	SelectorSet  map[string]string
 	Method       string
 	InParameters map[string]interface{}
 }
 
 func (m *InvokeMethod) Xml() string {
+  if m.OperationTimeout == "" {
+    m.OperationTimeout = "PT60S"
+  }
 	return applyTemplate(invoke_template, m)
 }

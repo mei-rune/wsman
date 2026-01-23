@@ -21,7 +21,7 @@ func NewShell(endpoint, user, pass, code_page string) (*Shell, error) {
 	if "" == code_page {
 		code_page = "936"
 	}
-	env := &envelope.CreateShell{code_page, Uuid()}
+	env := &envelope.CreateShell{CodePage: code_page, MessageId: Uuid()}
 	ep := &Endpoint{Url: endpoint, User: user, Password: pass}
 
 	reader, err := ep.Deliver(bytes.NewBufferString(env.Xml()))
@@ -109,7 +109,12 @@ func (s *Shell) NewCommand(cmd string, arguments []string) (string, error) {
 		return "", e
 	}
 
-	env := &envelope.CreateCommand{Uuid(), s.Id, strings.Replace(buf.String(), "&#34;", "&quot;", -1), arguments}
+	env := &envelope.CreateCommand{
+		MessageId: Uuid(),
+		ShellId: s.Id,
+	 	CommandText: strings.Replace(buf.String(), "&#34;", "&quot;", -1),
+	 	Arguments: arguments,
+	 }
 	reader, err := s.Deliver(bytes.NewBufferString(env.Xml()))
 	if err != nil {
 		return "", err
@@ -152,7 +157,7 @@ func (c *CommandResult) IsDone() bool {
 }
 
 func (s *Shell) Read(cmd_id string) (*CommandResult, error) {
-	env := &envelope.Receive{Uuid(), s.Id, cmd_id}
+	env := &envelope.Receive{MessageId: Uuid(), ShellId: s.Id, CommandId: cmd_id}
 	reader, err := s.Deliver(bytes.NewBufferString(env.Xml()))
 	if err != nil {
 		return nil, err
@@ -274,7 +279,7 @@ func readCommandState(decoder *xml.Decoder) (code string, err error) {
 
 func (s *Shell) Send(cmd_id, txt string) error {
 	txt = base64.StdEncoding.EncodeToString([]byte(txt))
-	env := &envelope.Send{Uuid(), s.Id, cmd_id, txt}
+	env := &envelope.Send{MessageId: Uuid(), ShellId: s.Id, CommandId: cmd_id, Content: txt}
 	reader, err := s.Deliver(bytes.NewBufferString(env.Xml()))
 	if err != nil {
 		return err
@@ -300,7 +305,7 @@ const (
 )
 
 func (s *Shell) Signal(cmd_id, signal string) error {
-	env := &envelope.Signal{Uuid(), s.Id, cmd_id, signal}
+	env := &envelope.Signal{MessageId: Uuid(), ShellId: s.Id, CommandId: cmd_id, Value: signal}
 	reader, err := s.Deliver(bytes.NewBufferString(env.Xml()))
 	if err != nil {
 		return err
@@ -319,7 +324,7 @@ func (s *Shell) Signal(cmd_id, signal string) error {
 }
 
 func (s *Shell) Close() error {
-	env := &envelope.DeleteShell{Uuid(), s.Id}
+	env := &envelope.DeleteShell{MessageId: Uuid(), ShellId: s.Id}
 	reader, err := s.Deliver(bytes.NewBufferString(env.Xml()))
 	if err != nil {
 		return err
