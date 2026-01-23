@@ -5,7 +5,7 @@ import (
 	"text/template"
 )
 
-const defaultTimeout = "PT60S"
+const defaultTimeout = "PT120S"
 
 const CreateShellTemplate = `<s:Envelope xmlns:s="` + NS_SOAP_ENV + `" xmlns:a="` + NS_ADDRESSING + `" xmlns:rsp="` + NS_WIN_SHELL + `" xmlns:w="` + NS_WSMAN_DMTF + `">
   <s:Header>
