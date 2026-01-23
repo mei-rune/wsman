@@ -5,6 +5,8 @@ import (
 	"text/template"
 )
 
+const defaultTimeout = "PT60S"
+
 const CreateShellTemplate = `<s:Envelope xmlns:s="` + NS_SOAP_ENV + `" xmlns:a="` + NS_ADDRESSING + `" xmlns:rsp="` + NS_WIN_SHELL + `" xmlns:w="` + NS_WSMAN_DMTF + `">
   <s:Header>
     <a:To>http://localhost:5985/wsman</a:To>
@@ -39,7 +41,7 @@ type CreateShell struct {
 
 func (m *CreateShell) Xml() string {
   if m.OperationTimeout == "" {
-    m.OperationTimeout = "PT60S"
+    m.OperationTimeout = defaultTimeout
   }
 	return applyTemplate(create_shell_template, m)
 }
@@ -72,7 +74,7 @@ type DeleteShell struct {
 
 func (m *DeleteShell) Xml() string {
   if m.OperationTimeout == "" {
-    m.OperationTimeout = "PT60S"
+    m.OperationTimeout = defaultTimeout
   }
 	return applyTemplate(delete_shell_template, m)
 }
@@ -116,7 +118,7 @@ type CreateCommand struct {
 
 func (m *CreateCommand) Xml() string {
   if m.OperationTimeout == "" {
-    m.OperationTimeout = "PT60S"
+    m.OperationTimeout = defaultTimeout
   }
 	return applyTemplate(create_template, m)
 }
@@ -155,7 +157,7 @@ type Send struct {
 
 func (m *Send) Xml() string {
   if m.OperationTimeout == "" {
-    m.OperationTimeout = "PT60S"
+    m.OperationTimeout = defaultTimeout
   }
 	return applyTemplate(send_template, m)
 }
@@ -193,7 +195,7 @@ type Receive struct {
 
 func (m *Receive) Xml() string {
   if m.OperationTimeout == "" {
-    m.OperationTimeout = "PT60S"
+    m.OperationTimeout = defaultTimeout
   }
 	return applyTemplate(receive_template, m)
 }
@@ -232,7 +234,7 @@ type Signal struct {
 
 func (m *Signal) Xml() string {
   if m.OperationTimeout == "" {
-    m.OperationTimeout = "PT60S"
+    m.OperationTimeout = defaultTimeout
   }
 	return applyTemplate(signal_template, m)
 }
@@ -276,7 +278,7 @@ type Enumerate struct {
 
 func (m *Enumerate) Xml() string {
   if m.OperationTimeout == "" {
-    m.OperationTimeout = "PT60S"
+    m.OperationTimeout = defaultTimeout
   }
 	return applyTemplate(enumerate_template, m)
 }
@@ -321,7 +323,7 @@ type Pull struct {
 
 func (m *Pull) Xml() string {
   if m.OperationTimeout == "" {
-    m.OperationTimeout = "PT60S"
+    m.OperationTimeout = defaultTimeout
   }
 	return applyTemplate(pull_template, m)
 }
@@ -361,7 +363,7 @@ type Get struct {
 
 func (m *Get) Xml() string {
   if m.OperationTimeout == "" {
-    m.OperationTimeout = "PT60S"
+    m.OperationTimeout = defaultTimeout
   }
 	return applyTemplate(get_template, m)
 }
@@ -463,7 +465,7 @@ type QueryFilter struct {
 
 func (m *Subscribe) Xml() string {
   if m.OperationTimeout == "" {
-    m.OperationTimeout = "PT60S"
+    m.OperationTimeout = defaultTimeout
   }
 	return applyTemplate(subscribe_template, m)
 }
@@ -504,7 +506,7 @@ type Unsubscribe struct {
 
 func (m *Unsubscribe) Xml() string {
   if m.OperationTimeout == "" {
-    m.OperationTimeout = "PT60S"
+    m.OperationTimeout = defaultTimeout
   }
 	return applyTemplate(unsubscribe_template, m)
 }
@@ -551,7 +553,7 @@ type InvokeMethod struct {
 
 func (m *InvokeMethod) Xml() string {
   if m.OperationTimeout == "" {
-    m.OperationTimeout = "PT60S"
+    m.OperationTimeout = defaultTimeout
   }
 	return applyTemplate(invoke_template, m)
 }
